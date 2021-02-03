@@ -47,7 +47,7 @@ func (v Validator) Validate(i interface{}) error {
 		return routex.NewError("'" + v.Name + "': expected '" + v.Type.String() + "' but got 'null'")
 	}
 	if v.Type > None {
-		switch i.(type) {
+		switch t := i.(type) {
 		case string:
 			if v.Type == String {
 				break
@@ -58,8 +58,8 @@ func (v Validator) Validate(i interface{}) error {
 				break
 			}
 			if v.Type == Int {
-				if n, r := modf(i.(float64)); i.(float64) != n || r {
-					return routex.NewError("'" + v.Name + "': expected 'integer' but got '" + reflect.TypeOf(i).String() + "'")
+				if n, r := modf(t); t != n || r {
+					return routex.NewError("'" + v.Name + "': expected 'integer' but got 'float'")
 				}
 				break
 			}
