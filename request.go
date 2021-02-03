@@ -18,13 +18,13 @@ type Request struct {
 	*http.Request
 }
 type requestValue string
-type values map[string]requestValue
 
 // Validator is an interface that allows for validation of Content data. By design, returning nil indicates
 // that the supplied Content has passed.
 type Validator interface {
 	Validate(Content) error
 }
+type values map[string]requestValue
 
 // ErrEmptyValue is a error returned from number conversion functions when the string value is empty and cannot
 // be converted to a number.
