@@ -1,9 +1,25 @@
+// Copyright 2021 PurpleSec Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 package routex
 
 import (
 	"context"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 )
@@ -147,4 +163,37 @@ func (r *Request) ContentValidate(v Validator) (Content, error) {
 		return nil, ErrNoBody
 	}
 	return c, v.Validate(c)
+}
+
+// Content returns a content map based on the JSO body data passed in this request. The resulting Content may be
+// nil if the body is empty. Any parsing errors will also be returned.
+func (r *Request) Marshal(i interface{}) error {
+	if r.Body == nil {
+		return nil
+	}
+	return json.NewDecoder(r.Body).Decode(&i)
+}
+func (r *Request) MarshalValidate(v Validator, i interface{}) error {
+	if r.Body == nil {
+		return nil
+	}
+	var (
+		c      Content
+		b, err = ioutil.ReadAll(r.Body)
+	)
+	if err != nil {
+		return err
+	}
+	if len(b) == 0 {
+		return errEmpty
+	}
+	if err = json.Unmarshal(b, &c); err != nil {
+		return err
+	}
+	if v != nil {
+		if err = v.Validate(c); err != nil {
+			return err
+		}
+	}
+	return json.Unmarshal(b, &i)
 }

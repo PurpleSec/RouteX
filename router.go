@@ -1,3 +1,18 @@
+// Copyright 2021 PurpleSec Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 package routex
 
 import (
@@ -20,9 +35,13 @@ type Mux struct {
 	Default http.Handler
 
 	ctx     context.Context
+	log     logger
 	lock    sync.RWMutex
 	cancel  context.CancelFunc
 	entries entries
+}
+type logger interface {
+	Print(v ...interface{})
 }
 type entry struct {
 	name    string
@@ -85,6 +104,11 @@ func (m *Mux) Close() error {
 	m.cancel()
 	return nil
 }
+
+// SetLog will set the internal logger for the Mux instance. This can be used to debug any errors during runtime.
+func (m *Mux) SetLog(l logger) {
+	m.log = l
+}
 func (e entries) Swap(i, j int) {
 	e[i], e[j] = e[j], e[i]
 }
@@ -133,6 +157,9 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if p := clean(r.URL.Path); p != r.URL.Path {
 		u := *r.URL
 		u.Path = p
+		if m.log != nil {
+			m.log.Print(`[RouteX Mux] Requested "` + r.URL.String() + `" redirecting to "` + u.String() + `".`)
+		}
 		http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
 		return
 	}
@@ -160,6 +187,29 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.NotFound(w, r)
+}
+
+// Method adds the handler function to the supplied regex expression path abd HTTP method and gives it the
+// supplied name. Path values must be unique and don't have to contain regex expressions. Regex match groups can be
+// used to grab data out of the call and will be placed in the 'Values' Request map. The name will be in the 'Route'
+// Request attribute to signal where the call originated from. This function returns an error if a duplicate path
+// exists or the regex expression is invalid.
+//
+// This function is similar to the 'Handle' and 'HandleFunc' methods, but will also take a HTTP method name. This will
+// take precendance over the non-method calls. Multiple calls to this function will allow for overriting the method
+// Handler or adding another handler for a different method name.
+func (m *Mux) Method(name, method, path string, h Handler) error {
+	if len(path) == 0 {
+		return ErrInvalidPath
+	}
+	if h == nil {
+		return ErrInvalidHandler
+	}
+	x, err := regexp.Compile(path)
+	if err != nil {
+		return err
+	}
+	return m.add(name, method, path, x, h)
 }
 
 // HandleFunc adds the handler function to the supplied regex expression path and gives it the supplied name.
@@ -223,14 +273,23 @@ func (m *Mux) handler(s string, r *http.Request) (Handler, *Request) {
 		l []string
 		h Handler
 	)
+	if m.log != nil {
+		m.log.Print(`[RouteX Mux] URL "` + r.URL.String() + `" requested...`)
+	}
 	for i := range m.entries {
 		if l = m.entries[i].matcher.FindStringSubmatch(s); len(l) == 0 {
 			continue
+		}
+		if m.log != nil {
+			m.log.Print(`[RouteX Mux] URL "` + r.URL.String() + `" was matched by "` + m.entries[i].name + `".`)
 		}
 		if len(m.entries[i].method) > 0 {
 			h = m.entries[i].method[r.Method]
 		}
 		if h == nil && m.entries[i].entry == nil {
+			if m.log != nil {
+				m.log.Print(`[RouteX Mux] URL "` + r.URL.String() + `" was matched, but method ` + r.Method + ` was not, returning 405!`)
+			}
 			return notAllowed, nil
 		}
 		if h == nil {
@@ -247,6 +306,9 @@ func (m *Mux) handler(s string, r *http.Request) (Handler, *Request) {
 				continue
 			}
 			o.Values[n] = requestValue(l[x])
+			if m.log != nil {
+				m.log.Print(`[RouteX Mux] URL "` + r.URL.String() + `" handler "` + m.entries[i].name + ` "` + n + `=` + l[x] + `"`)
+			}
 		}
 		m.lock.RUnlock()
 		return h, o
@@ -255,7 +317,7 @@ func (m *Mux) handler(s string, r *http.Request) (Handler, *Request) {
 	return nil, nil
 }
 
-// HandleMethod adds the handler function to the supplied regex expression path abd HTTP method and gives it the
+// MethodFunc adds the handler function to the supplied regex expression path abd HTTP method and gives it the
 // supplied name. Path values must be unique and don't have to contain regex expressions. Regex match groups can be
 // used to grab data out of the call and will be placed in the 'Values' Request map. The name will be in the 'Route'
 // Request attribute to signal where the call originated from. This function returns an error if a duplicate path
@@ -264,38 +326,7 @@ func (m *Mux) handler(s string, r *http.Request) (Handler, *Request) {
 // This function is similar to the 'Handle' and 'HandleFunc' methods, but will also take a HTTP method name. This will
 // take precendance over the non-method calls. Multiple calls to this function will allow for overriting the method
 // Handler or adding another handler for a different method name.
-func (m *Mux) HandleMethod(name, method, path string, h Handler) error {
-	if len(path) == 0 {
-		return ErrInvalidPath
-	}
-	if h == nil {
-		return ErrInvalidHandler
-	}
-	x, err := regexp.Compile(path)
-	if err != nil {
-		return err
-	}
-	return m.add(name, method, path, x, h)
-}
-func handle(x context.Context, h Handler, w http.ResponseWriter, r *Request) {
-	defer func() {
-		if recover() != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-	}()
-	h.Handle(x, w, r)
-}
-
-// HandleFuncMethod adds the handler function to the supplied regex expression path abd HTTP method and gives it the
-// supplied name. Path values must be unique and don't have to contain regex expressions. Regex match groups can be
-// used to grab data out of the call and will be placed in the 'Values' Request map. The name will be in the 'Route'
-// Request attribute to signal where the call originated from. This function returns an error if a duplicate path
-// exists or the regex expression is invalid.
-//
-// This function is similar to the 'Handle' and 'HandleFunc' methods, but will also take a HTTP method name. This will
-// take precendance over the non-method calls. Multiple calls to this function will allow for overriting the method
-// Handler or adding another handler for a different method name.
-func (m *Mux) HandleFuncMethod(name, method, path string, h HandlerFunc) error {
+func (m *Mux) MethodFunc(name, method, path string, h HandlerFunc) error {
 	if len(path) == 0 {
 		return ErrInvalidPath
 	}
@@ -307,6 +338,14 @@ func (m *Mux) HandleFuncMethod(name, method, path string, h HandlerFunc) error {
 		return err
 	}
 	return m.add(name, method, path, x, HandlerFunc(h))
+}
+func handle(x context.Context, h Handler, w http.ResponseWriter, r *Request) {
+	defer func() {
+		if recover() != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}()
+	h.Handle(x, w, r)
 }
 
 // Handle allows this alias to fulfill the Handler interface.

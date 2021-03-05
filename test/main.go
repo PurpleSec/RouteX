@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/PurpleSec/routex"
 	"github.com/PurpleSec/routex/val"
@@ -17,6 +19,12 @@ type item struct {
 
 func (i item) json() string {
 	return `{"id": ` + strconv.FormatUint(i.ID, 10) + `, "name": "` + i.Name + `", "desc": "` + i.Desc + `"}`
+}
+
+type f bool
+
+func (f) Print(v ...interface{}) {
+	fmt.Println(v...)
 }
 
 var items = make(map[uint64]*item)
@@ -33,13 +41,18 @@ func main() {
 		s = &http.Server{Addr: "127.0.0.1:8080", Handler: &h}
 	)
 
-	if err := h.HandleFuncMethod("item_list", http.MethodGet, "^/item/$", httpItemGetAll); err != nil {
+	h.SetLog(f(true))
+
+	if err := h.MethodFunc("item_list", http.MethodGet, "^/item/$", httpItemGetAll); err != nil {
 		panic(err)
 	}
-	if err := h.HandleFuncMethod("item_get", http.MethodGet, "^/item/(?P<item_id>[0-9]+)$", httpItemGet); err != nil {
+	if err := h.MethodFunc("item_get", http.MethodGet, "^/item/(?P<item_id>[0-9]+)$", httpItemGet); err != nil {
 		panic(err)
 	}
-	if err := h.HandleFuncMethod("item_post", http.MethodPost, "^/item/(?P<item_id>[0-9]+)$", httpItemPost); err != nil {
+	if err := h.MethodFunc("item_post", http.MethodPost, "^/item/(?P<item_id>[0-9]+)$", httpItemPost); err != nil {
+		panic(err)
+	}
+	if err := h.Handle("testing1", "^/test/$", routex.MarshalFuncEx(itemPostVal, item{}, jsonError, httpMarshal)); err != nil {
 		panic(err)
 	}
 
@@ -48,6 +61,9 @@ func main() {
 	}
 }
 
+func jsonError(w http.ResponseWriter, e error) {
+	w.Write([]byte(`{"error": "` + strings.ReplaceAll(e.Error(), `"`, `\"`) + `"}`))
+}
 func httpItemGet(x context.Context, w http.ResponseWriter, r *routex.Request) {
 	n, err := r.Values.Uint64("item_id")
 	if err != nil {
@@ -99,4 +115,9 @@ func httpItemGetAll(x context.Context, w http.ResponseWriter, r *routex.Request)
 		}
 	}
 	http.Error(w, s+"]}", http.StatusOK)
+}
+
+func httpMarshal(x context.Context, w http.ResponseWriter, r *routex.Request, i interface{}) {
+	fmt.Printf("%#v\n", i)
+	w.WriteHeader(http.StatusOK)
 }
