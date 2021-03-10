@@ -62,11 +62,11 @@ func (c Content) Uint64(s string) (uint64, error) {
 func (c Content) String(s string) (string, error) {
 	v, ok := c[s]
 	if !ok {
-		return "", WrapError(s, ErrNotExists)
+		return "", wrap(s, ErrNotExists)
 	}
 	r, ok := v.(string)
 	if !ok {
-		return "", WrapError(s, ErrInvalidType)
+		return "", wrap(s, ErrInvalidType)
 	}
 	return r, nil
 }
@@ -77,11 +77,11 @@ func (c Content) String(s string) (string, error) {
 func (c Content) Object(s string) (Content, error) {
 	v, ok := c[s]
 	if !ok {
-		return nil, WrapError(s, ErrNotExists)
+		return nil, wrap(s, ErrNotExists)
 	}
 	r, ok := v.(map[string]interface{})
 	if !ok {
-		return nil, WrapError(s, ErrInvalidType)
+		return nil, wrap(s, ErrInvalidType)
 	}
 	return r, nil
 }
@@ -92,11 +92,11 @@ func (c Content) Object(s string) (Content, error) {
 func (c Content) Float64(s string) (float64, error) {
 	v, ok := c[s]
 	if !ok {
-		return 0, WrapError(s, ErrNotExists)
+		return 0, wrap(s, ErrNotExists)
 	}
 	r, ok := v.(float64)
 	if !ok {
-		return 0, WrapError(s, ErrInvalidType)
+		return 0, wrap(s, ErrInvalidType)
 	}
 	return r, nil
 }

@@ -17,8 +17,8 @@ type Set []Validator
 // for incoming data. The Rules attribute can be used to add more constraints on the Validator.
 type Validator struct {
 	Name     string
-	Type     kind
 	Rules    Rules
+	Type     kind
 	Optional bool
 }
 

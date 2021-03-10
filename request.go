@@ -27,11 +27,10 @@ import (
 // Request is an extension of the 'http.Request' struct. This struct contains extra data, including the caller
 // route name and any parsed values from the calling URL. This struct is to be used in any Handler instances.
 type Request struct {
-	Route  string
+	ctx    context.Context
 	Values values
-
-	ctx context.Context
 	*http.Request
+	Route string
 }
 type requestValue string
 
@@ -118,21 +117,29 @@ func (r requestValue) Uint64() (uint64, error) {
 func (v values) Int64(s string) (int64, error) {
 	o, ok := v[s]
 	if !ok {
-		return 0, WrapError(s, ErrNotExists)
+		return 0, wrap(s, ErrNotExists)
 	}
 	return o.Int64()
+}
+
+// Marshal will attempt to unmarshal the JSON body in the Request into the supplied interface.
+func (r *Request) Marshal(i interface{}) error {
+	if r.Body == nil {
+		return nil
+	}
+	return json.NewDecoder(r.Body).Decode(&i)
 }
 func (v values) Uint64(s string) (uint64, error) {
 	o, ok := v[s]
 	if !ok {
-		return 0, WrapError(s, ErrNotExists)
+		return 0, wrap(s, ErrNotExists)
 	}
 	return o.Uint64()
 }
 func (v values) String(s string) (string, error) {
 	o, ok := v[s]
 	if !ok {
-		return "", WrapError(s, ErrNotExists)
+		return "", wrap(s, ErrNotExists)
 	}
 	return o.String(), nil
 }
@@ -145,7 +152,7 @@ func (r requestValue) Float64() (float64, error) {
 func (v values) Float64(s string) (float64, error) {
 	o, ok := v[s]
 	if !ok {
-		return 0, WrapError(s, ErrNotExists)
+		return 0, wrap(s, ErrNotExists)
 	}
 	return o.Float64()
 }
@@ -165,14 +172,8 @@ func (r *Request) ContentValidate(v Validator) (Content, error) {
 	return c, v.Validate(c)
 }
 
-// Content returns a content map based on the JSO body data passed in this request. The resulting Content may be
-// nil if the body is empty. Any parsing errors will also be returned.
-func (r *Request) Marshal(i interface{}) error {
-	if r.Body == nil {
-		return nil
-	}
-	return json.NewDecoder(r.Body).Decode(&i)
-}
+// MarshalValidate is similar to the Marshal function but will validate the Request content with the specified
+// Validator before
 func (r *Request) MarshalValidate(v Validator, i interface{}) error {
 	if r.Body == nil {
 		return nil
@@ -185,7 +186,7 @@ func (r *Request) MarshalValidate(v Validator, i interface{}) error {
 		return err
 	}
 	if len(b) == 0 {
-		return errEmpty
+		return nil
 	}
 	if err = json.Unmarshal(b, &c); err != nil {
 		return err

@@ -31,23 +31,24 @@ import (
 //
 // This Handler supports a base context that can be used to signal closure to all running Handlers.
 type Mux struct {
-	Timeout time.Duration
 	Default http.Handler
 
 	ctx     context.Context
 	log     logger
-	lock    sync.RWMutex
 	cancel  context.CancelFunc
 	entries entries
+
+	Timeout time.Duration
+	lock    sync.RWMutex
 }
 type logger interface {
 	Print(v ...interface{})
 }
 type entry struct {
-	name    string
 	entry   Handler
 	method  map[string]Handler
 	matcher *regexp.Regexp
+	name    string
 }
 type entries []*entry
 

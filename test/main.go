@@ -12,9 +12,9 @@ import (
 )
 
 type item struct {
-	ID   uint64
 	Name string
 	Desc string
+	ID   uint64
 }
 
 func (i item) json() string {
