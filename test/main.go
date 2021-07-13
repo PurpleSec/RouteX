@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -35,34 +36,32 @@ var itemPostVal = val.Set{
 	val.Validator{Name: "desc", Type: val.String, Rules: val.Rules{val.Length{Min: 0, Max: 255}}, Optional: true},
 }
 
-func main() {
+func main1() {
 	var (
 		h routex.Mux
 		s = &http.Server{Addr: "127.0.0.1:8080", Handler: &h}
 	)
 
+	b, err := json.Marshal(itemPostVal)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("v: \n%s\n", b)
+
 	h.SetLog(f(true))
 
-	if err := h.MethodFunc("item_list", http.MethodGet, "^/item/$", httpItemGetAll); err != nil {
-		panic(err)
-	}
-	if err := h.MethodFunc("item_get", http.MethodGet, "^/item/(?P<item_id>[0-9]+)$", httpItemGet); err != nil {
-		panic(err)
-	}
-	if err := h.MethodFunc("item_post", http.MethodPost, "^/item/(?P<item_id>[0-9]+)$", httpItemPost); err != nil {
-		panic(err)
-	}
-	if err := h.Handle("testing1", "^/test/$", routex.MarshalFuncEx(itemPostVal, item{}, jsonError, httpMarshal)); err != nil {
-		panic(err)
-	}
+	h.MustMethod("item_list", http.MethodGet, "^/item/$", routex.Func(httpItemGetAll))
+	h.MustMethod("item_get", http.MethodGet, "^/item/(?P<item_id>[0-9]+)$", routex.Func(httpItemGet))
+	h.MustMethod("item_post", http.MethodPost, "^/item/(?P<item_id>[0-9]+)$", routex.Func(httpItemPost))
+	h.Must("testing1", "^/test/$", routex.MarshalEx(itemPostVal, item{}, routex.FuncError(jsonError), routex.FuncMarshal(httpMarshal)))
 
 	if err := s.ListenAndServe(); err != nil {
 		panic(err)
 	}
 }
 
-func jsonError(w http.ResponseWriter, e error) {
-	w.Write([]byte(`{"error": "` + strings.ReplaceAll(e.Error(), `"`, `\"`) + `"}`))
+func jsonError(c int, s string, w http.ResponseWriter, r *routex.Request) {
+	w.Write([]byte(`{"error": "` + strings.ReplaceAll(s, `"`, `\"`) + `"}`))
 }
 func httpItemGet(x context.Context, w http.ResponseWriter, r *routex.Request) {
 	n, err := r.Values.Uint64("item_id")

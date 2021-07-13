@@ -24,6 +24,8 @@ import (
 	"strconv"
 )
 
+type value string
+
 // Request is an extension of the 'http.Request' struct. This struct contains extra data, including the caller
 // route name and any parsed values from the calling URL. This struct is to be used in any Handler instances.
 type Request struct {
@@ -32,14 +34,13 @@ type Request struct {
 	*http.Request
 	Route string
 }
-type requestValue string
 
 // Validator is an interface that allows for validation of Content data. By design, returning nil indicates
 // that the supplied Content has passed.
 type Validator interface {
 	Validate(Content) error
 }
-type values map[string]requestValue
+type values map[string]value
 
 // ErrEmptyValue is a error returned from number conversion functions when the string value is empty and cannot
 // be converted to a number.
@@ -48,6 +49,9 @@ const ErrEmptyValue = strErr("value is empty")
 // IsGet returns true if this is a http GET request.
 func (r *Request) IsGet() bool {
 	return r.Method == http.MethodGet
+}
+func (r value) String() string {
+	return string(r)
 }
 
 // IsPut returns true if this is a http PUT request.
@@ -65,6 +69,11 @@ func (r *Request) IsHead() bool {
 	return r.Method == http.MethodHead
 }
 
+// IsPatch returns true if this is a http PATCH request.
+func (r *Request) IsPatch() bool {
+	return r.Method == http.MethodPatch
+}
+
 // IsDelete returns true if this is a http DELETE request.
 func (r *Request) IsDelete() bool {
 	return r.Method == http.MethodDelete
@@ -74,8 +83,23 @@ func (r *Request) IsDelete() bool {
 func (r *Request) IsOptions() bool {
 	return r.Method == http.MethodOptions
 }
-func (r requestValue) String() string {
-	return string(r)
+func (r value) Int64() (int64, error) {
+	if len(r) == 0 {
+		return 0, ErrEmptyValue
+	}
+	return strconv.ParseInt(string(r), 10, 64)
+}
+func (r value) Uint64() (uint64, error) {
+	if len(r) == 0 {
+		return 0, ErrEmptyValue
+	}
+	return strconv.ParseUint(string(r), 10, 64)
+}
+func (r value) Float64() (float64, error) {
+	if len(r) == 0 {
+		return 0, ErrEmptyValue
+	}
+	return strconv.ParseFloat(string(r), 64)
 }
 func (v values) Raw(s string) interface{} {
 	return v[s]
@@ -101,18 +125,6 @@ func (r *Request) Content() (Content, error) {
 		return nil, nil
 	}
 	return c, err
-}
-func (r requestValue) Int64() (int64, error) {
-	if len(r) == 0 {
-		return 0, ErrEmptyValue
-	}
-	return strconv.ParseInt(string(r), 10, 64)
-}
-func (r requestValue) Uint64() (uint64, error) {
-	if len(r) == 0 {
-		return 0, ErrEmptyValue
-	}
-	return strconv.ParseUint(string(r), 10, 64)
 }
 func (v values) Int64(s string) (int64, error) {
 	o, ok := v[s]
@@ -143,12 +155,7 @@ func (v values) String(s string) (string, error) {
 	}
 	return o.String(), nil
 }
-func (r requestValue) Float64() (float64, error) {
-	if len(r) == 0 {
-		return 0, ErrEmptyValue
-	}
-	return strconv.ParseFloat(string(r), 64)
-}
+
 func (v values) Float64(s string) (float64, error) {
 	o, ok := v[s]
 	if !ok {

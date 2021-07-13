@@ -21,15 +21,15 @@ import (
 	"reflect"
 )
 
-var errInvalid = &err{s: "object is not valid"}
+const errInvalid = strErr("object is not valid")
 
 type wrapper struct {
-	w writer
+	e ErrorHandler
 	h Wrapper
 	v Validator
 }
 type marshaler struct {
-	w writer
+	e ErrorHandler
 	h Marshaler
 	v Validator
 	o reflect.Type
@@ -46,9 +46,6 @@ type Wrapper interface {
 type Marshaler interface {
 	Handle(context.Context, http.ResponseWriter, *Request, interface{})
 }
-type writer func(http.ResponseWriter, error)
-type wrapperFunc func(context.Context, http.ResponseWriter, *Request, Content)
-type marshalerFunc func(context.Context, http.ResponseWriter, *Request, interface{})
 
 // Wrap will create a handler with the specified Validator that will check the content before passing control
 // to the specified Handler.
@@ -56,41 +53,17 @@ func Wrap(v Validator, h Wrapper) Handler {
 	return &wrapper{h: h, v: v}
 }
 
-// WrapFunc will create a handler with the specified Validator that will check the content before passing control
-// to the specified Handler. This function allows for passing a function instead on an interface.
-func WrapFunc(v Validator, h wrapperFunc) Handler {
-	return &wrapper{h: h, v: v}
-}
-
 // WrapEx will create a handler with the specified Validator that will check the content before passing control
 // to the specified Handler. The supplied writer value allows for controlling the output when an error occurs.
-func WrapEx(v Validator, w writer, h Wrapper) Handler {
-	return &wrapper{h: h, v: v, w: w}
-}
-
-// WrapFuncEx will create a handler with the specified Validator that will check the content before passing control
-// to the specified Handler. This function allows for passing a function instead on an interface. The supplied writer
-// value allows for controlling the output when an error occurs.
-func WrapFuncEx(v Validator, w writer, h wrapperFunc) Handler {
-	return &wrapper{h: h, v: v, w: w}
+func WrapEx(v Validator, e ErrorHandler, h Wrapper) Handler {
+	return &wrapper{h: h, v: v, e: e}
 }
 
 // Marshal will create a handler that will attempt to unmarshal a copy of the supplied interface object once
 // successfully validated by the supplied validator. An empty or 'new(obj)' variant of the requested data will
 // work for this function.The supplied writer value allows for controlling the output when an error occurs.
-
-// MarshalFunc will create a handler that will attempt to unmarshal a copy of the supplied interface object once
-// successfully validated by the supplied validator. An empty or 'new(obj)' variant of the requested data will
-// work for this function. This function allows for passing a function instead on an interface.
-func MarshalFunc(v Validator, i interface{}, h marshalerFunc) Handler {
+func Marshal(v Validator, i interface{}, h Marshaler) Handler {
 	return &marshaler{h: h, v: v, o: reflect.TypeOf(i)}
-}
-
-// MarshalEx will create a handler that will attempt to unmarshal a copy of the supplied interface object once
-// successfully validated by the supplied validator. An empty or 'new(obj)' variant of the requested data will
-// work for this function. The supplied writer value allows for controlling the output when an error occurs.
-func MarshalEx(v Validator, i interface{}, w writer, h Marshaler) Handler {
-	return &marshaler{h: h, v: v, o: reflect.TypeOf(i), w: w}
 }
 func (h wrapper) Handle(x context.Context, w http.ResponseWriter, r *Request) {
 	if r.Body == nil {
@@ -99,12 +72,11 @@ func (h wrapper) Handle(x context.Context, w http.ResponseWriter, r *Request) {
 	}
 	c, err := r.ContentValidate(h.v)
 	if err != nil {
-		if h.w != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			h.w(w, err)
-			return
+		if h.e != nil {
+			h.e.HandleError(http.StatusBadRequest, err.Error(), w, r)
+		} else {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
-		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	h.h.Handle(x, w, r, c)
@@ -112,12 +84,11 @@ func (h wrapper) Handle(x context.Context, w http.ResponseWriter, r *Request) {
 func (m marshaler) Handle(x context.Context, w http.ResponseWriter, r *Request) {
 	o := reflect.New(m.o)
 	if !o.IsValid() {
-		if m.w != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			m.w(w, errInvalid)
-			return
+		if m.e != nil {
+			m.e.HandleError(http.StatusInternalServerError, errInvalid.Error(), w, r)
+		} else {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 	if r.Body == nil {
@@ -126,27 +97,19 @@ func (m marshaler) Handle(x context.Context, w http.ResponseWriter, r *Request) 
 	}
 	v := o.Interface()
 	if err := r.MarshalValidate(m.v, v); err != nil {
-		if m.w != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			m.w(w, err)
-			return
+		if m.e != nil {
+			m.e.HandleError(http.StatusBadRequest, err.Error(), w, r)
+		} else {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
-		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	m.h.Handle(x, w, r, v)
 }
 
-// MarshalFuncEx will create a handler that will attempt to unmarshal a copy of the supplied interface object once
+// MarshalEx will create a handler that will attempt to unmarshal a copy of the supplied interface object once
 // successfully validated by the supplied validator. An empty or 'new(obj)' variant of the requested data will
-// work for this function. This function allows for passing a function instead on an interface. The supplied writer
-// value allows for controlling the output when an error occurs.
-func MarshalFuncEx(v Validator, i interface{}, w writer, h marshalerFunc) Handler {
-	return &marshaler{h: h, v: v, o: reflect.TypeOf(i), w: w}
-}
-func (f wrapperFunc) Handle(x context.Context, w http.ResponseWriter, r *Request, c Content) {
-	f(x, w, r, c)
-}
-func (f marshalerFunc) Handle(x context.Context, w http.ResponseWriter, r *Request, i interface{}) {
-	f(x, w, r, i)
+// work for this function. The supplied writer value allows for controlling the output when an error occurs.
+func MarshalEx(v Validator, i interface{}, e ErrorHandler, h Marshaler) Handler {
+	return &marshaler{h: h, v: v, o: reflect.TypeOf(i), e: e}
 }

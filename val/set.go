@@ -16,10 +16,10 @@ type Set []Validator
 // Validator is a struct used to assist with data body validation. This struct can be used inside a Set to add rules
 // for incoming data. The Rules attribute can be used to add more constraints on the Validator.
 type Validator struct {
-	Name     string
-	Rules    Rules
-	Type     kind
-	Optional bool
+	Name     string `json:"name"`
+	Rules    Rules  `json:"rules"`
+	Type     kind   `json:"type"`
+	Optional bool   `json:"optional,omitempty"`
 }
 
 // ErrInvalidName is a validation error returned when a Validator rule has an empty name.
@@ -48,6 +48,11 @@ func (v Validator) Validate(i interface{}) error {
 	}
 	if v.Type > None {
 		switch t := i.(type) {
+		case bool:
+			if v.Type == Bool {
+				break
+			}
+			return routex.NewError("'" + v.Name + "': expected '" + v.Type.String() + "' but got 'boolean'")
 		case string:
 			if v.Type == String {
 				break

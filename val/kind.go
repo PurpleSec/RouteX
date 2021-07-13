@@ -12,6 +12,8 @@ const (
 	Int
 	// String represents a string type value.
 	String
+	// Bool is a type that is either true or false.
+	Bool
 	// Object is a type that can be used to ensure the result is a complex map or non-list type.
 	Object
 	// List is a type that will represent a generic list/array/slice input.
@@ -36,6 +38,8 @@ func (k kind) String() string {
 		return "integer"
 	case String:
 		return "string"
+	case Bool:
+		return "boolean"
 	case Object:
 		return "object"
 	case List:
