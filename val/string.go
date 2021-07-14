@@ -82,7 +82,7 @@ func (l Length) Validate(i interface{}) error {
 	if x < l.Min {
 		return routex.NewError("length " + strconv.FormatUint(x, 10) + " must be at least " + strconv.FormatUint(l.Min, 10))
 	}
-	if l.Min > l.Max {
+	if l.Min >= l.Max {
 		return nil
 	}
 	if x > l.Max {
