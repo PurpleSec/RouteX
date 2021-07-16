@@ -83,6 +83,12 @@ func (r *Request) IsDelete() bool {
 func (r *Request) IsOptions() bool {
 	return r.Method == http.MethodOptions
 }
+func (r value) Bool() (bool, error) {
+	if len(r) == 0 {
+		return false, ErrEmptyValue
+	}
+	return strconv.ParseBool(string(r))
+}
 func (r value) Int64() (int64, error) {
 	if len(r) == 0 {
 		return 0, ErrEmptyValue
@@ -109,6 +115,13 @@ func (v values) Raw(s string) interface{} {
 // context and cab be cancled if the Handler is closed or any timeout is passed.
 func (r *Request) Context() context.Context {
 	return r.ctx
+}
+func (v values) Bool(s string) (bool, error) {
+	o, ok := v[s]
+	if !ok {
+		return false, wrap(s, ErrNotExists)
+	}
+	return o.Bool()
 }
 
 // Content returns a content map based on the JSO body data passed in this request. The resulting Content may be
@@ -155,7 +168,6 @@ func (v values) String(s string) (string, error) {
 	}
 	return o.String(), nil
 }
-
 func (v values) Float64(s string) (float64, error) {
 	o, ok := v[s]
 	if !ok {

@@ -35,6 +35,21 @@ func (c Content) Raw(s string) interface{} {
 	return c[s]
 }
 
+// Bool attempts to return the value with the provided name as an boolean value. This function will
+// return an 'ErrNotExists' error if the value by the specified name does not exist or 'ErrInvalidType' if the
+// value does not represent a boolean type.
+func (c Content) Bool(s string) (bool, error) {
+	v, ok := c[s]
+	if !ok {
+		return false, wrap(s, ErrNotExists)
+	}
+	r, ok := v.(bool)
+	if !ok {
+		return false, wrap(s, ErrInvalidType)
+	}
+	return r, nil
+}
+
 // Int64 attempts to return the value with the provided name as an integer value. This function will return an
 // 'ErrNotExists' error if the value by the specified name does not exist or 'ErrInvalidType' if the value does
 // not represent an integer type.
@@ -71,6 +86,20 @@ func (c Content) String(s string) (string, error) {
 	return r, nil
 }
 
+// StringDefault attempts to return the value with the provided name as an string value. This function will
+// return the default value specified if the value does not exist or is not a string type.
+func (c Content) StringDefault(s, d string) string {
+	v, ok := c[s]
+	if !ok {
+		return d
+	}
+	r, ok := v.(string)
+	if !ok {
+		return d
+	}
+	return r
+}
+
 // Object attempts to return the value with the provided name as a complex object value (wrapped as a Content alias).
 // This function will return an 'ErrNotExists' error if the value by the specified name does not exist or
 // 'ErrInvalidType' if the value does not represent an object type.
@@ -99,4 +128,66 @@ func (c Content) Float64(s string) (float64, error) {
 		return 0, wrap(s, ErrInvalidType)
 	}
 	return r, nil
+}
+
+// BoolDefault attempts to return the value with the provided name as an boolean value. This function will
+// return the default value specified if the value does not exist or is not a boolean type.
+func (c Content) BoolDefault(s string, d bool) bool {
+	v, ok := c[s]
+	if !ok {
+		return d
+	}
+	r, ok := v.(bool)
+	if !ok {
+		return d
+	}
+	return r
+}
+
+// Int64Default attempts to return the value with the provided name as an integer value. This function will
+// return the default value specified if the value does not exist or is not a integer type.
+func (c Content) Int64Default(s string, d int64) int64 {
+	r, err := c.Float64(s)
+	if err != nil {
+		return d
+	}
+	return int64(r)
+}
+
+// Uint64Default attempts to return the value with the provided name as an integer value. This function will
+// return the default value specified if the value does not exist or is not a integer type.
+func (c Content) Uint64Default(s string, d uint64) uint64 {
+	r, err := c.Float64(s)
+	if err != nil {
+		return d
+	}
+	return uint64(r)
+}
+
+// ObjectDefault attempts to return the value with the provided name as an object value. This function will
+// return the default value specified if the value does not exist or is not a object type.
+func (c Content) ObjectDefault(s string, d Content) Content {
+	v, ok := c[s]
+	if !ok {
+		return d
+	}
+	r, ok := v.(map[string]interface{})
+	if !ok {
+		return d
+	}
+	return r
+}
+
+// Float64Default attempts to return the value with the provided name as an floating point value. This function will
+// return the default value specified if the value does not exist or is not a float type.
+func (c Content) Float64Default(s string, d float64) float64 {
+	v, ok := c[s]
+	if !ok {
+		return d
+	}
+	r, ok := v.(float64)
+	if !ok {
+		return d
+	}
+	return r
 }
