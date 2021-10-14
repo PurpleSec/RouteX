@@ -17,19 +17,16 @@ package routex
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"reflect"
 )
 
-const errInvalid = strErr("object is not valid")
-
 type wrapper struct {
-	e ErrorHandler
 	h Wrapper
 	v Validator
 }
 type marshaler struct {
-	e ErrorHandler
 	h Marshaler
 	v Validator
 	o reflect.Type
@@ -53,10 +50,14 @@ func Wrap(v Validator, h Wrapper) Handler {
 	return &wrapper{h: h, v: v}
 }
 
-// WrapEx will create a handler with the specified Validator that will check the content before passing control
-// to the specified Handler. The supplied writer value allows for controlling the output when an error occurs.
-func WrapEx(v Validator, e ErrorHandler, h Wrapper) Handler {
-	return &wrapper{h: h, v: v, e: e}
+// JSON will write the supplied interface to the ResponseWrite with the supplied status.
+// DO NOT expect the writer to be usage afterwards.
+//
+// This function automatically sets the encoding to JSON.
+func JSON(w http.ResponseWriter, c int, i interface{}) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(c)
+	json.NewEncoder(w).Encode(i)
 }
 
 // Marshal will create a handler that will attempt to unmarshal a copy of the supplied interface object once
@@ -70,13 +71,9 @@ func (h wrapper) Handle(x context.Context, w http.ResponseWriter, r *Request) {
 		h.h.Handle(x, w, r, nil)
 		return
 	}
-	c, err := r.ContentValidate(h.v)
+	c, err := r.ValidateContent(h.v)
 	if err != nil {
-		if h.e != nil {
-			h.e.HandleError(http.StatusBadRequest, err.Error(), w, r)
-		} else {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
+		r.Mux.handleError(http.StatusBadRequest, err.Error(), w, r)
 		return
 	}
 	h.h.Handle(x, w, r, c)
@@ -84,11 +81,7 @@ func (h wrapper) Handle(x context.Context, w http.ResponseWriter, r *Request) {
 func (m marshaler) Handle(x context.Context, w http.ResponseWriter, r *Request) {
 	o := reflect.New(m.o)
 	if !o.IsValid() {
-		if m.e != nil {
-			m.e.HandleError(http.StatusInternalServerError, errInvalid.Error(), w, r)
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		r.Mux.handleError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), w, r)
 		return
 	}
 	if r.Body == nil {
@@ -96,20 +89,9 @@ func (m marshaler) Handle(x context.Context, w http.ResponseWriter, r *Request) 
 		return
 	}
 	v := o.Interface()
-	if err := r.MarshalValidate(m.v, v); err != nil {
-		if m.e != nil {
-			m.e.HandleError(http.StatusBadRequest, err.Error(), w, r)
-		} else {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
+	if err := r.ValidateMarshal(m.v, v); err != nil {
+		r.Mux.handleError(http.StatusBadRequest, err.Error(), w, r)
 		return
 	}
 	m.h.Handle(x, w, r, v)
-}
-
-// MarshalEx will create a handler that will attempt to unmarshal a copy of the supplied interface object once
-// successfully validated by the supplied validator. An empty or 'new(obj)' variant of the requested data will
-// work for this function. The supplied writer value allows for controlling the output when an error occurs.
-func MarshalEx(v Validator, i interface{}, e ErrorHandler, h Marshaler) Handler {
-	return &marshaler{h: h, v: v, o: reflect.TypeOf(i), e: e}
 }

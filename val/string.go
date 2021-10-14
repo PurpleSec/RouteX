@@ -1,19 +1,33 @@
+// Copyright 2021 PurpleSec Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 package val
 
 import (
+	"errors"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/PurpleSec/routex"
 )
 
 var (
 	// NoEmpty adds a string constraint to ensure a string value cannot be empty.
 	NoEmpty = &Length{Min: 1}
 
-	errNotString = routex.NewError("value is not a string")
+	errNotString = errors.New("value is not a string")
 )
 
 type regex struct {
@@ -80,13 +94,13 @@ func (l Length) Validate(i interface{}) error {
 		}
 	}
 	if x < l.Min {
-		return routex.NewError("length " + strconv.FormatUint(x, 10) + " must be at least " + strconv.FormatUint(l.Min, 10))
+		return errors.New("length " + strconv.FormatUint(x, 10) + " must be at least " + strconv.FormatUint(l.Min, 10))
 	}
 	if l.Min >= l.Max {
 		return nil
 	}
 	if x > l.Max {
-		return routex.NewError("length " + strconv.FormatUint(x, 10) + " cannot be more than " + strconv.FormatUint(l.Min, 10))
+		return errors.New("length " + strconv.FormatUint(x, 10) + " cannot be more than " + strconv.FormatUint(l.Min, 10))
 	}
 	return nil
 }
@@ -98,7 +112,7 @@ func (r *regex) Validate(i interface{}) error {
 	if r.MatchString(v) {
 		return nil
 	}
-	return routex.NewError("string does not match expression '" + r.String() + "'")
+	return errors.New("string does not match expression '" + r.String() + "'")
 }
 func (s strPrefix) Validate(i interface{}) error {
 	v, ok := i.(string)
@@ -108,7 +122,7 @@ func (s strPrefix) Validate(i interface{}) error {
 	if strings.HasPrefix(v, string(s)) {
 		return nil
 	}
-	return routex.NewError("string does not have prefix '" + string(s) + "'")
+	return errors.New("string does not have prefix '" + string(s) + "'")
 }
 func (s strSuffix) Validate(i interface{}) error {
 	v, ok := i.(string)
@@ -118,7 +132,7 @@ func (s strSuffix) Validate(i interface{}) error {
 	if strings.HasSuffix(v, string(s)) {
 		return nil
 	}
-	return routex.NewError("string does not have suffix '" + string(s) + "'")
+	return errors.New("string does not have suffix '" + string(s) + "'")
 }
 func (s strContains) Validate(i interface{}) error {
 	v, ok := i.(string)
@@ -128,5 +142,5 @@ func (s strContains) Validate(i interface{}) error {
 	if strings.Contains(v, string(s)) {
 		return nil
 	}
-	return routex.NewError("string does not contain '" + string(s) + "'")
+	return errors.New("string does not contain '" + string(s) + "'")
 }

@@ -15,36 +15,27 @@
 
 package routex
 
-type err struct {
+type errStr string
+type errValue struct {
 	e error
 	s string
 }
-type strErr string
 
-func (e err) Error() string {
+func (e errStr) Error() string {
+	return string(e)
+}
+func (e errStr) String() string {
+	return string(e)
+}
+func (e errValue) Error() string {
+	if e.e != nil {
+		return e.s + ": " + e.e.Error()
+	}
 	return e.s
 }
-func (e err) Unwrap() error {
+func (e errValue) Unwrap() error {
 	return e.e
 }
-func (e err) String() string {
-	return e.s
-}
-
-// NewError creates a new string backed error struct and returns it. This error struct does not support Unwrapping.
-// The resulting structs created will be comparable.
-func NewError(s string) error {
-	return strErr(s)
-}
-func (e strErr) Error() string {
-	return string(e)
-}
-func (e strErr) String() string {
-	return string(e)
-}
-func wrap(s string, e error) error {
-	if e != nil {
-		return &err{s: s + ": " + e.Error(), e: e}
-	}
-	return &err{s: s}
+func (e errValue) String() string {
+	return e.Error()
 }

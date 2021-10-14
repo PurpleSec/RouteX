@@ -19,39 +19,29 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
-	"strconv"
 )
 
-type value string
-
-// Request is an extension of the 'http.Request' struct. This struct contains extra data, including the caller
-// route name and any parsed values from the calling URL. This struct is to be used in any Handler instances.
+// Request is an extension of the 'http.Request' struct.
+//
+// This struct includes parsed values from the calling URL and offers some convenience
+// functions for parsing the resulting data.
 type Request struct {
+	Mux    *Mux
 	ctx    context.Context
 	Values values
 	*http.Request
-	Route string
 }
 
-// Validator is an interface that allows for validation of Content data. By design, returning nil indicates
-// that the supplied Content has passed.
+// Validator is an interface that allows for validation of Content data. By design, returning nil
+// indicates that the supplied Content has passed all checks.
 type Validator interface {
 	Validate(Content) error
 }
-type values map[string]value
-
-// ErrEmptyValue is a error returned from number conversion functions when the string value is empty and cannot
-// be converted to a number.
-const ErrEmptyValue = strErr("value is empty")
 
 // IsGet returns true if this is a http GET request.
 func (r *Request) IsGet() bool {
 	return r.Method == http.MethodGet
-}
-func (r value) String() string {
-	return string(r)
 }
 
 // IsPut returns true if this is a http PUT request.
@@ -83,129 +73,77 @@ func (r *Request) IsDelete() bool {
 func (r *Request) IsOptions() bool {
 	return r.Method == http.MethodOptions
 }
-func (r value) Bool() (bool, error) {
-	if len(r) == 0 {
-		return false, ErrEmptyValue
-	}
-	return strconv.ParseBool(string(r))
-}
-func (r value) Int64() (int64, error) {
-	if len(r) == 0 {
-		return 0, ErrEmptyValue
-	}
-	return strconv.ParseInt(string(r), 10, 64)
-}
-func (r value) Uint64() (uint64, error) {
-	if len(r) == 0 {
-		return 0, ErrEmptyValue
-	}
-	return strconv.ParseUint(string(r), 10, 64)
-}
-func (r value) Float64() (float64, error) {
-	if len(r) == 0 {
-		return 0, ErrEmptyValue
-	}
-	return strconv.ParseFloat(string(r), 64)
-}
-func (v values) Raw(s string) interface{} {
-	return v[s]
-}
 
-// Context returns the request's context. The returned context is always non-nil. This is a child of the base Handler
-// context and cab be cancled if the Handler is closed or any timeout is passed.
+// Context returns the request's context. The returned context is always non-nil.
+//
+// This is a child of the base Handler context if supplied on Mux creation
+// and can be cancled if the Handler is closed or any timeout is passed.
 func (r *Request) Context() context.Context {
 	return r.ctx
 }
-func (v values) Bool(s string) (bool, error) {
-	o, ok := v[s]
-	if !ok {
-		return false, wrap(s, ErrNotExists)
-	}
-	return o.Bool()
-}
 
-// Content returns a content map based on the JSO body data passed in this request. The resulting Content may be
-// nil if the body is empty. Any parsing errors will also be returned.
+// Content returns a content map based on the JSON body data passed in this request.
+// This function returns 'ErrNoBody' if the Body is nil or empty.
+//
+// Any JSON parsing errors will also be returned if they occur.
 func (r *Request) Content() (Content, error) {
 	if r.Body == nil {
-		return nil, nil
+		return nil, ErrNoBody
 	}
 	var (
 		c   Content
 		err = json.NewDecoder(r.Body).Decode(&c)
 	)
 	if err == io.EOF {
-		return nil, nil
+		return c, nil
 	}
 	return c, err
 }
-func (v values) Int64(s string) (int64, error) {
-	o, ok := v[s]
-	if !ok {
-		return 0, wrap(s, ErrNotExists)
-	}
-	return o.Int64()
-}
 
 // Marshal will attempt to unmarshal the JSON body in the Request into the supplied interface.
+// This function returns 'ErrNoBody' if the Body is nil or empty.
+//
+// Any JSON parsing errors will also be returned if they occur.
 func (r *Request) Marshal(i interface{}) error {
 	if r.Body == nil {
-		return nil
+		return ErrNoBody
 	}
 	return json.NewDecoder(r.Body).Decode(&i)
 }
-func (v values) Uint64(s string) (uint64, error) {
-	o, ok := v[s]
-	if !ok {
-		return 0, wrap(s, ErrNotExists)
-	}
-	return o.Uint64()
-}
-func (v values) String(s string) (string, error) {
-	o, ok := v[s]
-	if !ok {
-		return "", wrap(s, ErrNotExists)
-	}
-	return o.String(), nil
-}
-func (v values) Float64(s string) (float64, error) {
-	o, ok := v[s]
-	if !ok {
-		return 0, wrap(s, ErrNotExists)
-	}
-	return o.Float64()
-}
 
-// ContentValidate returns a content map based on the JSO body data passed in this request. The resulting Content may be
-// nil if the body is empty. Any parsing errors will also be returned. This function allows for passing a Set that can
-// also validate the content before returning. This will only validate if no errors are returned beforehand.
-// This function will return 'ErrNoBody' if no content was found.
-func (r *Request) ContentValidate(v Validator) (Content, error) {
+// ValidateContent returns a content map based on the JSON body data passed in this request.
+// This function allows for passing a Validator that can also validate the content before returning.
+//
+// This will only validate if no JSON parsing errors are returned beforehand.
+// This function will return 'ErrNoBody' if no content was found or the request body is empty.
+func (r *Request) ValidateContent(v Validator) (Content, error) {
 	c, err := r.Content()
-	if v == nil || err != nil {
+	if err != nil {
 		return c, err
 	}
-	if c == nil {
-		return nil, ErrNoBody
+	if v == nil {
+		return c, nil
 	}
 	return c, v.Validate(c)
 }
 
-// MarshalValidate is similar to the Marshal function but will validate the Request content with the specified
-// Validator before
-func (r *Request) MarshalValidate(v Validator, i interface{}) error {
+// ValidateMarshal is similar to the Marshal function but will validate the Request content with the specified
+// Validator before returning. This function returns 'ErrNoBody' if the Body is nil or empty.
+//
+// Any JSON parsing errors will also be returned if they occur.
+func (r *Request) ValidateMarshal(v Validator, i interface{}) error {
 	if r.Body == nil {
-		return nil
+		return ErrNoBody
 	}
 	var (
 		c      Content
-		b, err = ioutil.ReadAll(r.Body)
+		b, err = io.ReadAll(r.Body)
 	)
 	if err != nil {
 		return err
 	}
 	if len(b) == 0 {
-		return nil
+		return ErrNoBody
 	}
 	if err = json.Unmarshal(b, &c); err != nil {
 		return err

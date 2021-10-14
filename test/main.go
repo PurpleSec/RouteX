@@ -2,121 +2,77 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/PurpleSec/routex"
 	"github.com/PurpleSec/routex/val"
 )
 
-type item struct {
-	Name string
-	Desc string
-	ID   uint64
-}
-
-func (i item) json() string {
-	return `{"id": ` + strconv.FormatUint(i.ID, 10) + `, "name": "` + i.Name + `", "desc": "` + i.Desc + `"}`
+var jobVal = val.Set{
+	val.Validator{Name: "services", Type: val.List, Optional: true},
+	val.Validator{Name: "ping_sent", Type: val.Int, Rules: val.Rules{val.Min(0)}},
+	val.Validator{Name: "ping_respond", Type: val.Int, Rules: val.Rules{val.Min(0)}},
 }
 
 type f bool
 
-func (f) Print(v ...interface{}) {
+func (f) Println(v ...interface{}) {
 	fmt.Println(v...)
 }
 
-var items = make(map[uint64]*item)
-
-var itemPostVal = val.Set{
-	val.Validator{Name: "id", Type: val.Int, Rules: val.ID, Optional: true},
-	val.Validator{Name: "name", Type: val.String, Rules: val.Rules{val.Length{Min: 6, Max: 64}}},
-	val.Validator{Name: "desc", Type: val.String, Rules: val.Rules{val.Length{Min: 0, Max: 255}}, Optional: true},
+func addHead(_ context.Context, w http.ResponseWriter, _ *routex.Request) bool {
+	w.Header().Add("Hello", "World")
+	return true
 }
 
-func main1() {
+func alwaysJSON(_ context.Context, w http.ResponseWriter, _ *routex.Request) bool {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	return true
+}
+
+func verify(_ context.Context, w http.ResponseWriter, r *routex.Request) bool {
+	if r.Values.IntDefault("id", 0) < 10 {
+		w.WriteHeader(http.StatusForbidden)
+		return false
+	}
+	return true
+}
+
+func main() {
 	var (
-		h routex.Mux
-		s = &http.Server{Addr: "127.0.0.1:8080", Handler: &h}
+		m routex.Mux
+		s = &http.Server{Addr: "127.0.0.1:8080", Handler: &m}
 	)
 
-	b, err := json.Marshal(itemPostVal)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("v: \n%s\n", b)
+	m.SetLog(f(true))
 
-	h.SetLog(f(true))
+	m.Middleware(alwaysJSON)
 
-	h.MustMethod("item_list", http.MethodGet, "^/item/$", routex.Func(httpItemGetAll))
-	h.MustMethod("item_get", http.MethodGet, "^/item/(?P<item_id>[0-9]+)$", routex.Func(httpItemGet))
-	h.MustMethod("item_post", http.MethodPost, "^/item/(?P<item_id>[0-9]+)$", routex.Func(httpItemPost))
-	h.Must("testing1", "^/test/$", routex.MarshalEx(itemPostVal, item{}, routex.FuncError(jsonError), routex.FuncMarshal(httpMarshal)))
+	m.Must("^/(?P<name>[a-z]+)$", routex.Func(func1), http.MethodGet)
+	m.Must("^/(?P<name>[a-z]+)/do$", routex.Func(func1))
+	m.Must("^/derp/(?P<id>[0-9]+)$", routex.Func(func2), http.MethodPost).Middleware(verify)
 
 	if err := s.ListenAndServe(); err != nil {
 		panic(err)
 	}
 }
 
-func jsonError(c int, s string, w http.ResponseWriter, r *routex.Request) {
-	w.Write([]byte(`{"error": "` + strings.ReplaceAll(s, `"`, `\"`) + `"}`))
-}
-func httpItemGet(x context.Context, w http.ResponseWriter, r *routex.Request) {
-	n, err := r.Values.Uint64("item_id")
-	if err != nil {
-		http.Error(w, `{"error": "missing or invalid item id", "type": "invalid request"}`, http.StatusNotFound)
-		return
+func func1(_ context.Context, w http.ResponseWriter, r *routex.Request) {
+	w.Write([]byte("hello there!"))
+	v, err := r.Values.String("name")
+	if err == nil {
+		w.Write([]byte(" " + v + "!"))
 	}
-	i, ok := items[n]
-	if !ok {
-		http.Error(w, `{"error": "unknown item id", "type": "bad request"}`, http.StatusNotFound)
-		return
-	}
-	http.Error(w, i.json(), http.StatusOK)
-}
-func httpItemPost(x context.Context, w http.ResponseWriter, r *routex.Request) {
-	c, err := r.ContentValidate(itemPostVal)
-	if err != nil {
-		http.Error(w, `{"error": "`+err.Error()+`", "type": "invalid request"}`, http.StatusBadRequest)
-		return
-	}
-	if c == nil {
-		http.Error(w, `{"error": "no data", "type": "empty request"}`, http.StatusBadRequest)
-		return
-	}
-	n, err := r.Values.Uint64("item_id")
-	if err != nil {
-		http.Error(w, `{"error": "missing or invalid item id", "type": "invalid request"}`, http.StatusNotFound)
-		return
-	}
-	i, ok := items[n]
-	if !ok {
-		i = &item{ID: n}
-		items[n] = i
-	}
-	i.Name, _ = c.String("name")
-	if v, err := c.String("desc"); err == nil {
-		i.Desc = v
-	}
-	http.Error(w, i.json(), http.StatusOK)
-}
-func httpItemGetAll(x context.Context, w http.ResponseWriter, r *routex.Request) {
-	var (
-		s = `{"items": [`
-		c = len(items)
-	)
-	for _, v := range items {
-		s += v.json()
-		if c--; c > 0 {
-			s += ", "
-		}
-	}
-	http.Error(w, s+"]}", http.StatusOK)
 }
 
-func httpMarshal(x context.Context, w http.ResponseWriter, r *routex.Request, i interface{}) {
-	fmt.Printf("%#v\n", i)
-	w.WriteHeader(http.StatusOK)
+func func2(_ context.Context, w http.ResponseWriter, _ *routex.Request) {
+
+	routex.JSON(w, 200, map[string]string{
+		"value1": "1",
+		"value2": "2",
+		"value3": "3",
+		"value4": "4",
+	})
+
 }

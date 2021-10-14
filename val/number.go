@@ -1,10 +1,24 @@
+// Copyright 2021 PurpleSec Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 package val
 
 import (
+	"errors"
 	"strconv"
 	"unsafe"
-
-	"github.com/PurpleSec/routex"
 )
 
 const (
@@ -22,14 +36,14 @@ const (
 	GreaterThanZero = Min(1)
 )
 
-var errNotNumber = routex.NewError("value is not a number")
+var errNotNumber = errors.New("value is not a number")
 
 // Min is a wrapper that will add a minimum number value constraint.
 type Min float64
-type number bool
 
 // Max is a wrapper that will add a maximum number value constraint.
 type Max float64
+type number bool
 type polarity bool
 
 func modf(f float64) (float64, bool) {
@@ -51,7 +65,7 @@ func (m Max) Validate(i interface{}) error {
 		return errNotNumber
 	}
 	if x > float64(m) {
-		return routex.NewError("value " + strconv.FormatFloat(x, 'f', 0, 64) + " cannot be more than " + strconv.FormatFloat(float64(m), 'f', 0, 64))
+		return errors.New("value " + strconv.FormatFloat(x, 'f', 0, 64) + " cannot be more than " + strconv.FormatFloat(float64(m), 'f', 0, 64))
 	}
 	return nil
 }
@@ -63,7 +77,7 @@ func (m Min) Validate(i interface{}) error {
 		return errNotNumber
 	}
 	if x < float64(m) {
-		return routex.NewError("value " + strconv.FormatFloat(x, 'f', 0, 64) + " cannot be less than " + strconv.FormatFloat(float64(m), 'f', 0, 64))
+		return errors.New("value " + strconv.FormatFloat(x, 'f', 0, 64) + " cannot be less than " + strconv.FormatFloat(float64(m), 'f', 0, 64))
 	}
 	return nil
 }
@@ -74,10 +88,10 @@ func (n number) Validate(i interface{}) error {
 	}
 	v, r := modf(x)
 	if bool(n) && (v != x || r) {
-		return routex.NewError("value " + strconv.FormatFloat(x, 'f', 2, 64) + " must an integer")
+		return errors.New("value " + strconv.FormatFloat(x, 'f', 2, 64) + " must an integer")
 	}
 	if !bool(n) && v == x && !r {
-		return routex.NewError("value " + strconv.FormatFloat(x, 'f', 0, 64) + " must a float")
+		return errors.New("value " + strconv.FormatFloat(x, 'f', 0, 64) + " must a float")
 	}
 	return nil
 }
@@ -87,10 +101,10 @@ func (p polarity) Validate(i interface{}) error {
 		return errNotNumber
 	}
 	if p && x < 0 {
-		return routex.NewError("value " + strconv.FormatFloat(x, 'f', 0, 64) + " must be positive")
+		return errors.New("value " + strconv.FormatFloat(x, 'f', 0, 64) + " must be positive")
 	}
 	if !p && x >= 0 {
-		return routex.NewError("value " + strconv.FormatFloat(x, 'f', 0, 64) + " must be negative")
+		return errors.New("value " + strconv.FormatFloat(x, 'f', 0, 64) + " must be negative")
 	}
 	return nil
 }
