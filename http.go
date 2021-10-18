@@ -204,7 +204,6 @@ func (m *Mux) process(ctx context.Context, h Handler, v *wares, w http.ResponseW
 				v = i.String()
 			}
 			if m.log != nil {
-
 				m.log.Println(`[RouteX] Request "` + r.URL.String() + `" recovered from a panic caused by "` + v + `"!`)
 			}
 			m.handleError(http.StatusInternalServerError, v, w, r)
