@@ -5,13 +5,13 @@ import (
 	"net/http"
 )
 
-// Middleware is a function alias that can be used to handle and work on a request before
-// it is handled to the assigned Mux function (or default function).
+// Middleware is a function alias that can be used to handle and work on a request
+// before it is handled to the assigned Mux function (or default function).
 //
 // Middlewares applied to Routes will be applied AFTER the global Mux Middleware.
 //
-// The returned boolean can be used to interrupt the call stack before handeling back
-// control to implement features such as redirects or authentication.
+// The returned boolean can be used to interrupt the call stack before handeling
+// back control to implement features such as redirects or authentication.
 type Middleware func(context.Context, http.ResponseWriter, *Request) bool
 
 // Middleware adds the supplied Middleware functions to the Mux.

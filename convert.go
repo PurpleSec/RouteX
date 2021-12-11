@@ -1,4 +1,4 @@
-// Copyright 2021 PurpleSec Team
+// Copyright 2021 - 2022 PurpleSec Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,24 +24,27 @@ type convert struct {
 	http.Handler
 }
 
-// ConvertFunc is an alias for the standard 'http.HandlerFunc' that can be used for compatibility with any built-in
-// interface support.
+// ConvertFunc is an alias for the standard 'http.HandlerFunc' that can be used
+// for compatibility with any built-in interface support.
 type ConvertFunc http.HandlerFunc
 
 // Func is an alias that can be used to use a function signature as a 'Handler' instead.
 type Func func(context.Context, http.ResponseWriter, *Request)
 
-// ErrorFunc is an alias that can be used to use a function signature as a 'ErrorHandler' instead.
+// ErrorFunc is an alias that can be used to use a function signature as a 'ErrorHandler'
+// instead.
 type ErrorFunc func(int, string, http.ResponseWriter, *Request)
 
-// WrapFunc is an alias that can be used to use a function signature as a 'Wrapper' instead.
+// WrapFunc is an alias that can be used to use a function signature as a 'Wrapper'
+// instead.
 type WrapFunc func(context.Context, http.ResponseWriter, *Request, Content)
 
-// MarshalFunc is an alias that can be used to use a function signature as a 'Marshaler' instead.
+// MarshalFunc is an alias that can be used to use a function signature as a 'Marshaler'
+// instead.
 type MarshalFunc func(context.Context, http.ResponseWriter, *Request, interface{})
 
-// Convert is a warpper for the standard 'http.Handler' that can be used for compatibility with
-// any built-in interface to support RouteX functions.
+// Convert is a warpper for the standard 'http.Handler' that can be used for
+// compatibility with any built-in interface to support RouteX functions.
 func Convert(h http.Handler) Handler {
 	return convert{Handler: h}
 }

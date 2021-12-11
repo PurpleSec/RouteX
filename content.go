@@ -1,4 +1,4 @@
-// Copyright 2021 PurpleSec Team
+// Copyright 2021 - 2022 PurpleSec Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,26 +19,30 @@ package routex
 type Content map[string]interface{}
 
 const (
-	// ErrNoBody is an error returned when there is no content passed to a HTTP request when it's required.
+	// ErrNoBody is an error returned when there is no content passed to a HTTP
+	// request when it's required.
 	ErrNoBody = errStr("missing HTTP body")
-	// ErrNotExists is an error returned from any of the Content getter functions when the value by
-	// the supplied name does not exist in the Content map.
+	// ErrNotExists is an error returned from any of the Content getter functions
+	// when the value by the supplied name does not exist in the Content map.
 	ErrNotExists = errStr("value does not exist")
-	// ErrInvalidType is a error returned from any of the Content getter functions when the value by
-	// the supplied name is not the requested value.
+	// ErrInvalidType is a error returned from any of the Content getter functions
+	// when the value by the supplied name is not the requested value.
 	ErrInvalidType = errStr("incorrect value type")
 )
 
-// Raw returns the raw interface value with the supplied value name. This function returns nil
-// if the name does not exist. This is similar to directly calling the name in a map.
+// Raw returns the raw interface value with the supplied value name.
+//
+// This function returns nil if the name does not exist. This is similar to
+// directly calling the name in a map.
 func (c Content) Raw(s string) interface{} {
 	return c[s]
 }
 
 // Bool attempts to return the value with the provided name as an boolean value.
 //
-// This function will return an 'ErrNotExists' error if the value by the specified name does
-// not exist or 'ErrInvalidType' if the value does not represent a boolean type.
+// This function will return an 'ErrNotExists' error if the value by the specified
+// name does not exist or 'ErrInvalidType' if the value does not represent a boolean
+// type.
 func (c Content) Bool(s string) (bool, error) {
 	v, ok := c[s]
 	if !ok {
@@ -53,8 +57,9 @@ func (c Content) Bool(s string) (bool, error) {
 
 // Int attempts to return the value with the provided name as an integer value.
 //
-// This function will return an 'ErrNotExists' error if the value by the specified name does
-// not exist or 'ErrInvalidType' if the value does not represent an integer type.
+// This function will return an 'ErrNotExists' error if the value by the specified
+// name does not exist or 'ErrInvalidType' if the value does not represent an integer
+// type.
 func (c Content) Int(s string) (int64, error) {
 	r, err := c.Float(s)
 	if err != nil {
@@ -63,10 +68,12 @@ func (c Content) Int(s string) (int64, error) {
 	return int64(r), nil
 }
 
-// Uint attempts to return the value with the provided name as an unsigned integer value.
+// Uint attempts to return the value with the provided name as an unsigned integer
+// value.
 //
-// This function will return an 'ErrNotExists' error if the value by the specified name does
-// not exist or 'ErrInvalidType' if the value does not represent an integer type.
+// This function will return an 'ErrNotExists' error if the value by the specified
+// name does not exist or 'ErrInvalidType' if the value does not represent an integer
+// type.
 func (c Content) Uint(s string) (uint64, error) {
 	r, err := c.Float(s)
 	if err != nil {
@@ -77,8 +84,9 @@ func (c Content) Uint(s string) (uint64, error) {
 
 // String attempts to return the value with the provided name as a string value.
 //
-// This function will return an 'ErrNotExists' error if the value by the specified name does
-// not exist or 'ErrInvalidType' if the value does not represent a string type.
+// This function will return an 'ErrNotExists' error if the value by the specified
+// name does not exist or 'ErrInvalidType' if the value does not represent a string
+// type.
 func (c Content) String(s string) (string, error) {
 	v, ok := c[s]
 	if !ok {
@@ -91,10 +99,12 @@ func (c Content) String(s string) (string, error) {
 	return r, nil
 }
 
-// Float attempts to return the value with the provided name as an floating point value.
+// Float attempts to return the value with the provided name as an floating point
+// value.
 //
-// This function will return an 'ErrNotExists' error if the value by the specified name does
-// not exist or 'ErrInvalidType' if the value does not represent a float type.
+// This function will return an 'ErrNotExists' error if the value by the specified
+// name does not exist or 'ErrInvalidType' if the value does not represent a float
+// type.
 func (c Content) Float(s string) (float64, error) {
 	v, ok := c[s]
 	if !ok {
@@ -107,10 +117,11 @@ func (c Content) Float(s string) (float64, error) {
 	return r, nil
 }
 
-// StringDefault attempts to return the value with the provided name as an string value.
+// StringDefault attempts to return the value with the provided name as an string
+// value.
 //
-// This function will return the default value specified if the value does not exist or
-// is not a string type.
+// This function will return the default value specified if the value does not exist
+// or is not a string type.
 func (c Content) StringDefault(s, d string) string {
 	v, ok := c[s]
 	if !ok {
@@ -123,11 +134,12 @@ func (c Content) StringDefault(s, d string) string {
 	return r
 }
 
-// Object attempts to return the value with the provided name as a complex object value
-// (wrapped as a Content alias).
+// Object attempts to return the value with the provided name as a complex object
+// value (wrapped as a Content alias).
 //
-// This function will return an 'ErrNotExists' error if the value by the specified name does
-// not exist or 'ErrInvalidType' if the value does not represent an object type.
+// This function will return an 'ErrNotExists' error if the value by the specified
+// name does not exist or 'ErrInvalidType' if the value does not represent an object
+// type.
 func (c Content) Object(s string) (Content, error) {
 	v, ok := c[s]
 	if !ok {
@@ -140,10 +152,11 @@ func (c Content) Object(s string) (Content, error) {
 	return r, nil
 }
 
-// BoolDefault attempts to return the value with the provided name as an boolean value.
+// BoolDefault attempts to return the value with the provided name as an boolean
+// value.
 //
-// This function will return the default value specified if the value does not exist or
-// is not a boolean type.
+// This function will return the default value specified if the value does not exist
+// or is not a boolean type.
 func (c Content) BoolDefault(s string, d bool) bool {
 	v, ok := c[s]
 	if !ok {
@@ -156,10 +169,11 @@ func (c Content) BoolDefault(s string, d bool) bool {
 	return r
 }
 
-// IntDefault attempts to return the value with the provided name as an integer value.
+// IntDefault attempts to return the value with the provided name as an integer
+// value.
 //
-// This function will return the default value specified if the value does not exist or
-// is not a integer type.
+// This function will return the default value specified if the value does not exist
+// or is not a integer type.
 func (c Content) IntDefault(s string, d int64) int64 {
 	r, err := c.Float(s)
 	if err != nil {
@@ -168,10 +182,11 @@ func (c Content) IntDefault(s string, d int64) int64 {
 	return int64(r)
 }
 
-// UintDefault attempts to return the value with the provided name as an unsigned integer value.
+// UintDefault attempts to return the value with the provided name as an unsigned
+// integer value.
 //
-// This function will return the default value specified if the value does not exist or
-// is not a unsigned integer type.
+// This function will return the default value specified if the value does not exist
+// or is not a unsigned integer type.
 func (c Content) UintDefault(s string, d uint64) uint64 {
 	r, err := c.Float(s)
 	if err != nil {
@@ -180,10 +195,11 @@ func (c Content) UintDefault(s string, d uint64) uint64 {
 	return uint64(r)
 }
 
-// FloatDefault attempts to return the value with the provided name as an floating point value.
+// FloatDefault attempts to return the value with the provided name as an floating
+// point value.
 //
-// This function willreturn the default value specified if the value does not exist or
-// is not a float type.
+// This function willreturn the default value specified if the value does not exist
+// or is not a float type.
 func (c Content) FloatDefault(s string, d float64) float64 {
 	v, ok := c[s]
 	if !ok {
@@ -196,11 +212,11 @@ func (c Content) FloatDefault(s string, d float64) float64 {
 	return r
 }
 
-// ObjectDefault attempts to return the value with the provided name as an object value
-// (wrapped as a Content alias).
+// ObjectDefault attempts to return the value with the provided name as an object
+// value (wrapped as a Content alias).
 //
-// This function will return the default value specified if the value does not exist or
-// is not a object type.
+// This function will return the default value specified if the value does not exist
+// or is not a object type.
 func (c Content) ObjectDefault(s string, d Content) Content {
 	v, ok := c[s]
 	if !ok {

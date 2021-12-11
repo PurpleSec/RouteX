@@ -1,4 +1,4 @@
-// Copyright 2021 PurpleSec Team
+// Copyright 2021 - 2022 PurpleSec Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import "strconv"
 type value string
 type values map[string]value
 
-// ErrEmptyValue is a error returned from number conversion functions when the string value
-// is empty and does not represent a number.
+// ErrEmptyValue is a error returned from number conversion functions when the
+// string value is empty and does not represent a number.
 const ErrEmptyValue = errStr("value is empty")
 
 func (v value) String() string {

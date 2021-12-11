@@ -1,4 +1,4 @@
-// Copyright 2021 PurpleSec Team
+// Copyright 2021 - 2022 PurpleSec Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,15 +22,20 @@ import (
 	"github.com/PurpleSec/routex"
 )
 
-// SubSet is a type if Set that can be used to validate a complex object that is a child of an object being validated.
+// SubSet is a type if Set that can be used to validate a complex object that is
+// a child of an object being validated.
+//
 // SubSets have the same options as a Set.
 type SubSet Set
 
-// Set is an alias for a list of Validators that can be used to validate a request data body.
+// Set is an alias for a list of Validators that can be used to validate a request
+// data body.
 type Set []Validator
 
-// Validator is a struct used to assist with data body validation. This struct can be used inside a Set to add rules
-// for incoming data. The Rules attribute can be used to add more constraints on the Validator.
+// Validator is a struct used to assist with data body validation. This struct can
+// be used inside a Set to add rules for incoming data.
+//
+// The Rules attribute can be used to add more constraints on the Validator.
 type Validator struct {
 	Name     string `json:"name"`
 	Rules    Rules  `json:"rules"`
@@ -38,7 +43,8 @@ type Validator struct {
 	Optional bool   `json:"optional,omitempty"`
 }
 
-// ErrInvalidName is a validation error returned when a Validator rule has an empty name.
+// ErrInvalidName is a validation error returned when a Validator rule has an empty
+// name.
 var ErrInvalidName = errors.New("invalid name in set")
 
 // Validate fulfills the Rule interface.
@@ -50,14 +56,14 @@ func (s SubSet) Validate(i interface{}) error {
 	return validate(s, m)
 }
 
-// Validate will check the rules of this Set against the supplied content object. This function will return nil if
-// the Content is considered valid.
+// Validate will check the rules of this Set against the supplied content object.
+// This function will return nil if the Content is considered valid.
 func (s Set) Validate(c routex.Content) error {
 	return validate(s, c)
 }
 
-// Validate will attempt to validate a single validation rule and return an error if the supplied interface does not
-// match the Validator's constraints.
+// Validate will attempt to validate a single validation rule and return an error
+// if the supplied interface does not match the Validator's constraints.
 func (v Validator) Validate(i interface{}) error {
 	if i == nil && v.Type > None {
 		return errors.New("'" + v.Name + "': expected '" + v.Type.String() + "' but got 'null'")
@@ -121,9 +127,12 @@ func (v Validator) Validate(i interface{}) error {
 	return nil
 }
 
-// ValidateEmpty will check the rules of this Set against the supplied content object. This function will return nil if
-// the Content is considered valid or if the Content is empty. This function allows for specifying and validating
-// optional data.
+// ValidateEmpty will check the rules of this Set against the supplied content
+// object.
+//
+// This function will return nil if the Content is considered valid or if the
+// Content is empty. This function allows for specifying and validating optional
+// data.
 func (s Set) ValidateEmpty(c routex.Content) error {
 	if len(c) == 0 {
 		return nil

@@ -1,4 +1,4 @@
-// Copyright 2021 PurpleSec Team
+// Copyright 2021 - 2022 PurpleSec Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,9 +22,11 @@ import (
 )
 
 const (
-	// Float adds a number constraint to ensure a number does contain a decimal or a decimal of greater than zero.
+	// Float adds a number constraint to ensure a number does contain a decimal
+	// or a decimal of greater than zero.
 	Float = number(false)
-	// Integer adds a number constraint to ensure a number does not contain a decimal or a decimal of zero.
+	// Integer adds a number constraint to ensure a number does not contain a
+	// decimal or a decimal of zero.
 	Integer = number(true)
 
 	// Positive adds a number constraint to ensure a number is zero or greater.
@@ -32,7 +34,8 @@ const (
 	// Negative adds a number constraint to ensure a number is less than zero.
 	Negative = polarity(false)
 
-	// GreaterThanZero adds a number constraint to ensure a number greater than zero.
+	// GreaterThanZero adds a number constraint to ensure a number greater than
+	//zero.
 	GreaterThanZero = Min(1)
 )
 

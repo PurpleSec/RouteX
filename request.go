@@ -1,4 +1,4 @@
-// Copyright 2021 PurpleSec Team
+// Copyright 2021 - 2022 PurpleSec Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,8 +33,8 @@ type Request struct {
 	*http.Request
 }
 
-// Validator is an interface that allows for validation of Content data. By design, returning nil
-// indicates that the supplied Content has passed all checks.
+// Validator is an interface that allows for validation of Content data. By design,
+// returning nil indicates that the supplied Content has passed all checks.
 type Validator interface {
 	Validate(Content) error
 }
@@ -100,7 +100,9 @@ func (r *Request) Content() (Content, error) {
 	return c, err
 }
 
-// Marshal will attempt to unmarshal the JSON body in the Request into the supplied interface.
+// Marshal will attempt to unmarshal the JSON body in the Request into the supplied
+// interface.
+//
 // This function returns 'ErrNoBody' if the Body is nil or empty.
 //
 // Any JSON parsing errors will also be returned if they occur.
@@ -111,11 +113,16 @@ func (r *Request) Marshal(i interface{}) error {
 	return json.NewDecoder(r.Body).Decode(&i)
 }
 
-// ValidateContent returns a content map based on the JSON body data passed in this request.
-// This function allows for passing a Validator that can also validate the content before returning.
+// ValidateContent returns a content map based on the JSON body data passed in this
+// request.
+//
+// This function allows for passing a Validator that can also validate the content
+// before returning.
 //
 // This will only validate if no JSON parsing errors are returned beforehand.
-// This function will return 'ErrNoBody' if no content was found or the request body is empty.
+//
+// This function will return 'ErrNoBody' if no content was found or the request
+// body is empty.
 func (r *Request) ValidateContent(v Validator) (Content, error) {
 	c, err := r.Content()
 	if err != nil {
@@ -127,8 +134,10 @@ func (r *Request) ValidateContent(v Validator) (Content, error) {
 	return c, v.Validate(c)
 }
 
-// ValidateMarshal is similar to the Marshal function but will validate the Request content with the specified
-// Validator before returning. This function returns 'ErrNoBody' if the Body is nil or empty.
+// ValidateMarshal is similar to the Marshal function but will validate the Request
+// content with the specified Validator before returning.
+//
+// This function returns 'ErrNoBody' if the Body is nil or empty.
 //
 // Any JSON parsing errors will also be returned if they occur.
 func (r *Request) ValidateMarshal(v Validator, i interface{}) error {

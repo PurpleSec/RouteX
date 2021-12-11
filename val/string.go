@@ -1,4 +1,4 @@
-// Copyright 2021 PurpleSec Team
+// Copyright 2021 - 2022 PurpleSec Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,7 +34,8 @@ type regex struct {
 	*regexp.Regexp
 }
 
-// Length adds a string  or array length constraint to be used. Max value is ignored if empty or less than Min.
+// Length adds a string  or array length constraint to be used.
+// Max value is ignored if empty or less than Min.
 type Length struct {
 	Min, Max uint64
 }
@@ -42,23 +43,26 @@ type strPrefix string
 type strSuffix string
 type strContains string
 
-// Prefix returns a Rule that will verify that the value is a string and starts with the supplied string.
+// Prefix returns a Rule that will verify that the value is a string and starts
+// with the supplied string.
 func Prefix(s string) Rule {
 	return strPrefix(s)
 }
 
-// Suffix returns a Rule that will verify that the value is a string and ends with the supplied string.
+// Suffix returns a Rule that will verify that the value is a string and ends
+// with the supplied string.
 func Suffix(s string) Rule {
 	return strSuffix(s)
 }
 
-// Contains returns a Rule that will verify that the value is a string and contains the supplied string.
+// Contains returns a Rule that will verify that the value is a string and
+// contains the supplied string.
 func Contains(s string) Rule {
 	return strContains(s)
 }
 
-// MustRegex will return a regular expression validator. This function will panic if the expression has any
-// errors compiling.
+// MustRegex will return a regular expression validator. This function will panic
+// f the expression has any errors compiling.
 func MustRegex(s string) Rule {
 	r, err := regexp.Compile(s)
 	if err != nil {
@@ -67,8 +71,8 @@ func MustRegex(s string) Rule {
 	return &regex{r}
 }
 
-// Regex will return a regular expression validator. This function will return an error if the expression has
-// any errors compiling.
+// Regex will return a regular expression validator. This function will return an
+// error if the expression has any errors compiling.
 func Regex(s string) (Rule, error) {
 	r, err := regexp.Compile(s)
 	if err != nil {

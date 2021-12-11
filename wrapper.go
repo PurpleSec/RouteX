@@ -1,4 +1,4 @@
-// Copyright 2021 PurpleSec Team
+// Copyright 2021 - 2022 PurpleSec Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,25 +32,29 @@ type marshaler struct {
 	o reflect.Type
 }
 
-// Wrapper is an interface that can wrap a Handler to instead directly get a Content object from the
-// Router instead. These can be created using the 'Wrap*' functions passed with a Validator.
+// Wrapper is an interface that can wrap a Handler to instead directly get a Content
+// object from the Router instead. These can be created using the 'Wrap*' functions
+// passed with a Validator.
 type Wrapper interface {
 	Handle(context.Context, http.ResponseWriter, *Request, Content)
 }
 
-// Marshaler is an interface that can wrap a Handler to instead directly get the associated struct type from the
-// Router instead. These can be created using the 'Marshal*' functions passed with a Validator.
+// Marshaler is an interface that can wrap a Handler to instead directly get the
+// associated struct type from the Router instead. These can be created using the
+// 'Marshal*' functions passed with a Validator.
 type Marshaler interface {
 	Handle(context.Context, http.ResponseWriter, *Request, interface{})
 }
 
-// Wrap will create a handler with the specified Validator that will check the content before passing control
-// to the specified Handler.
+// Wrap will create a handler with the specified Validator that will check the
+// content before passing control to the specified Handler.
 func Wrap(v Validator, h Wrapper) Handler {
 	return &wrapper{h: h, v: v}
 }
 
-// JSON will write the supplied interface to the ResponseWrite with the supplied status.
+// JSON will write the supplied interface to the ResponseWrite with the supplied
+// status.
+//
 // DO NOT expect the writer to be usage afterwards.
 //
 // This function automatically sets the encoding to JSON.
@@ -60,9 +64,10 @@ func JSON(w http.ResponseWriter, c int, i interface{}) {
 	json.NewEncoder(w).Encode(i)
 }
 
-// Marshal will create a handler that will attempt to unmarshal a copy of the supplied interface object once
-// successfully validated by the supplied validator. An empty or 'new(obj)' variant of the requested data will
-// work for this function.The supplied writer value allows for controlling the output when an error occurs.
+// Marshal will create a handler that will attempt to unmarshal a copy of the supplied
+// interface object once successfully validated by the supplied validator.
+//
+// An empty or 'new(obj)' variant of the requested data will work for this function.
 func Marshal(v Validator, i interface{}, h Marshaler) Handler {
 	return &marshaler{h: h, v: v, o: reflect.TypeOf(i)}
 }

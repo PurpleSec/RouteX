@@ -1,4 +1,4 @@
-// Copyright 2021 PurpleSec Team
+// Copyright 2021 - 2022 PurpleSec Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,18 +27,23 @@ import (
 const (
 	// ErrInvalidPath is returned from the 'Add*' functions when the path is empty.
 	ErrInvalidPath = errStr("supplied path is invalid")
-	// ErrInvalidRegexp is returned from the 'AddExp*' functions when the Regexp expression is nil.
+	// ErrInvalidRegexp is returned from the 'AddExp*' functions when the Regexp
+	// expression is nil.
 	ErrInvalidRegexp = errStr("cannot use a nil Regexp")
-	// ErrInvalidHandler is returned from the 'Add*' functions when the Handler is nil.
+	// ErrInvalidHandler is returned from the 'Add*' functions when the Handler is
+	// nil.
 	ErrInvalidHandler = errStr("cannot use a nil Handler")
-	// ErrInvalidMethod is an error returned when the HTTP method names provided are empty.
+	// ErrInvalidMethod is an error returned when the HTTP method names provided
+	// are empty.
 	ErrInvalidMethod = errStr("supplied methods contains an empty method name")
 )
 
-// Mux is a http Handler that can be used to handle connections based on Regex expression paths. Matching
-// groups passed in the request URL values may be parse out and passed to the resulting request.
+// Mux is a http Handler that can be used to handle connections based on Regex
+// expression paths. Matching groups passed in the request URL values may be parsed
+// out and passed to the resulting request.
 //
-// This Handler supports a base context that can be used to signal closure to all running Handlers.
+// This Handler supports a base context that can be used to signal closure to all
+// running Handlers.
 type Mux struct {
 	lock sync.RWMutex
 
@@ -54,20 +59,25 @@ type Mux struct {
 	Timeout time.Duration
 }
 
-// Route is an interface that allows for modification of an added HTTP route after being created.
+// Route is an interface that allows for modification of an added HTTP route after
+// being created.
+//
 // One example function is adding route-specific middleware.
 type Route interface {
 	Middleware(m ...Middleware) Route
 }
 
-// Handler is a fork of the http.Handler interface. This interface supplies a base Context to be used and augments
-// the supplied Request to have options for getting formatted JSON body content or getting the URL match groups.
+// Handler is a fork of the http.Handler interface. This interface supplies a base
+// Context to be used and augments the supplied Request to have options for getting
+// formatted JSON body content or getting the URL match groups.
 type Handler interface {
 	Handle(context.Context, http.ResponseWriter, *Request)
 }
 
-// ErrorHandler is an interface that allows for handeling any error returns to be reported to the client instead
-// of using the default methods. The 'HandleError' method will be called with an error status code, error message
+// ErrorHandler is an interface that allows for handeling any error returns to be
+// reported to the client instead of using the default methods.
+//
+// The 'HandleError' method will be called with an error status code, error message
 // and the standard 'Handler' options (except the Context).
 type ErrorHandler interface {
 	HandleError(int, string, http.ResponseWriter, *Request)
@@ -78,7 +88,8 @@ func New() *Mux {
 	return new(Mux)
 }
 
-// SetLog will set the internal logger for the Mux instance. This can be used to debug any errors during runtime.
+// SetLog will set the internal logger for the Mux instance. This can be used to
+// debug any errors during runtime.
 func (m *Mux) SetLog(l logger) {
 	m.log = l
 }
@@ -88,13 +99,17 @@ func NewContext(x context.Context) *Mux {
 	return &Mux{ctx: x}
 }
 
-// Must adds the Handler to the supplied regex expression path and gives it the supplied name. Path values must be
-// unique and don't have to contain regex expressions. Regex match groups can be used to grab data out of the call
-// and will be placed in the 'Values' Request map. The name will be in the 'Route' Request attribute to signal where
-// the call originated from. This function panics if a duplicate path exists or the regex expression is invalid.
+// Must adds the Handler to the supplied regex expression path. Path values must
+// be unique and don't have to contain regex expressions.
 //
-// This function will add a handler that will be considered the 'default' handler for the path and will be called
-// unless a method-based Handler is also specified and that HTTP method is used.
+// Regex match groups can be used to grab data out of the call and will be placed
+// in the 'Values' Request map.
+//
+// This function panics if a duplicate path exists or the regex expression is invalid.
+//
+// This function will add a handler that will be considered the 'default' handler
+// for the path and will be called unless a method-based Handler is also specified
+// and that HTTP method is used.
 func (m *Mux) Must(path string, h Handler, methods ...string) Route {
 	v, err := m.Add(path, h, methods...)
 	if err != nil {
@@ -103,14 +118,18 @@ func (m *Mux) Must(path string, h Handler, methods ...string) Route {
 	return v
 }
 
-// Add adds the Handler to the supplied regex expression path and gives it the supplied name. Path values must be
-// unique and don't have to contain regex expressions. Regex match groups can be used to grab data out of the call
-// and will be placed in the 'Values' Request map. The name will be in the 'Route' Request attribute to signal where
-// the call originated from. This function returns an error if a duplicate path exists or the regex expression is
-// invalid.
+// Add adds the Handler to the supplied regex expression path. Path values must be
+// unique and don't have to contain regex expressions.
 //
-// This function will add a handler that will be considered the 'default' handler for the path and will be called
-// unless a method-based Handler is also specified and that HTTP method is used.
+// Regex match groups can be used to grab data out of the call and will be placed
+// in the 'Values' Request map.
+//
+// This function returns an error if a duplicate path exists or the regex expression
+// is invalid.
+//
+// This function will add a handler that will be considered the 'default' handler
+// for the path and will be called unless a method-based Handler is also specified
+// and that HTTP method is used.
 func (m *Mux) Add(path string, h Handler, methods ...string) (Route, error) {
 	if len(path) == 0 {
 		return nil, ErrInvalidPath
@@ -125,13 +144,17 @@ func (m *Mux) Add(path string, h Handler, methods ...string) (Route, error) {
 	return m.add(path, methods, x, h)
 }
 
-// MustExp adds the Handler to the supplied regex expression and gives it the supplied name. Path values must be
-// unique and don't have to contain regex expressions. Regex match groups can be used to grab data out of the call
-// and will be placed in the 'Values' Request map. The name will be in the 'Route' Request attribute to signal where
-// the call originated from. This function panics if a duplicate path exists or the regex expression is invalid.
+// MustExp adds the Handler to the supplied regex expression. Path values must be
+// unique and don't have to contain regex expressions.
 //
-// This function will add a handler that will be considered the 'default' handler for the path and will be called
-// unless a method-based Handler is also specified and that HTTP method is used.
+// Regex match groups can be used to grab data out of the call and will be placed
+// in the 'Values' Request map.
+//
+// This function panics if a duplicate path exists or the regex expression is invalid.
+//
+// This function will add a handler that will be considered the 'default' handler
+// for the path and will be called unless a method-based Handler is also specified
+// and that HTTP method is used.
 func (m *Mux) MustExp(exp *regexp.Regexp, h Handler, methods ...string) Route {
 	v, err := m.AddExp(exp, h, methods...)
 	if err != nil {
@@ -140,14 +163,18 @@ func (m *Mux) MustExp(exp *regexp.Regexp, h Handler, methods ...string) Route {
 	return v
 }
 
-// AddExp adds the Handler to the supplied regex expression and gives it the supplied name. Path values must be
-// unique and don't have to contain regex expressions. Regex match groups can be used to grab data out of the call
-// and will be placed in the 'Values' Request map. The name will be in the 'Route' Request attribute to signal where
-// the call originated from. This function returns an error if a duplicate path exists or the regex expression is
-// invalid.
+// AddExp adds the Handler to the supplied regex expression. Path values must be
+// unique and don't have to contain regex expressions.
 //
-// This function will add a handler that will be considered the 'default' handler for the path and will be called
-// unless a method-based Handler is also specified and that HTTP method is used.
+// Regex match groups can be used to grab data out of the call and will be placed
+// in the 'Values' Request map.
+//
+// This function returns an error if a duplicate path exists or the regex expression
+// is invalid.
+//
+// This function will add a handler that will be considered the 'default' handler
+// for the path and will be called unless a method-based Handler is also specified
+// and that HTTP method is used.
 func (m *Mux) AddExp(exp *regexp.Regexp, h Handler, methods ...string) (Route, error) {
 	if exp == nil {
 		return nil, ErrInvalidRegexp
