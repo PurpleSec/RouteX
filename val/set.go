@@ -18,8 +18,6 @@ package val
 import (
 	"errors"
 	"reflect"
-
-	"github.com/PurpleSec/routex"
 )
 
 // SubSet is a type if Set that can be used to validate a complex object that is
@@ -54,12 +52,6 @@ func (s SubSet) Validate(i interface{}) error {
 		return errors.New("type '" + reflect.TypeOf(i).String() + "' is not valid for SubSets")
 	}
 	return validate(s, m)
-}
-
-// Validate will check the rules of this Set against the supplied content object.
-// This function will return nil if the Content is considered valid.
-func (s Set) Validate(c routex.Content) error {
-	return validate(s, c)
 }
 
 // Validate will attempt to validate a single validation rule and return an error
@@ -127,13 +119,19 @@ func (v Validator) Validate(i interface{}) error {
 	return nil
 }
 
+// Validate will check the rules of this Set against the supplied content object.
+// This function will return nil if the Content is considered valid.
+func (s Set) Validate(c map[string]interface{}) error {
+	return validate(s, c)
+}
+
 // ValidateEmpty will check the rules of this Set against the supplied content
 // object.
 //
 // This function will return nil if the Content is considered valid or if the
 // Content is empty. This function allows for specifying and validating optional
 // data.
-func (s Set) ValidateEmpty(c routex.Content) error {
+func (s Set) ValidateEmpty(c map[string]interface{}) error {
 	if len(c) == 0 {
 		return nil
 	}
