@@ -28,7 +28,6 @@ type wrapper struct {
 type marshaler[T any] struct {
 	h Marshaler[T]
 	v Validator
-	t T
 }
 
 // Wrapper is an interface that can wrap a Handler to instead directly get a Content
