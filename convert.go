@@ -41,7 +41,7 @@ type WrapFunc func(context.Context, http.ResponseWriter, *Request, Content)
 
 // MarshalFunc is an alias that can be used to use a function signature as a 'Marshaler'
 // instead.
-type MarshalFunc func(context.Context, http.ResponseWriter, *Request, interface{})
+type MarshalFunc[T any] func(context.Context, http.ResponseWriter, *Request, T)
 
 // Convert is a warpper for the standard 'http.Handler' that can be used for
 // compatibility with any built-in interface to support RouteX functions.
@@ -56,7 +56,7 @@ func (f Func) Handle(x context.Context, w http.ResponseWriter, r *Request) {
 
 // Handle allows this alias to fulfill the Handler interface.
 func (c convert) Handle(_ context.Context, w http.ResponseWriter, r *Request) {
-	c.Handler.ServeHTTP(w, r.Request)
+	c.ServeHTTP(w, r.Request)
 }
 
 // Handle allows this alias to fulfill the Handler interface.
@@ -75,6 +75,6 @@ func (f WrapFunc) Handle(x context.Context, w http.ResponseWriter, r *Request, c
 }
 
 // Handle allows this alias to fulfill the Marshaler interface.
-func (f MarshalFunc) Handle(x context.Context, w http.ResponseWriter, r *Request, i interface{}) {
-	f(x, w, r, i)
+func (f MarshalFunc[T]) Handle(x context.Context, w http.ResponseWriter, r *Request, v T) {
+	f(x, w, r, v)
 }

@@ -49,20 +49,8 @@ type Max float64
 type number bool
 type polarity bool
 
-func modf(f float64) (float64, bool) {
-	var (
-		i = *(*uint64)(unsafe.Pointer(&f))
-		e = uint64(i>>52)&0x7FF - 1023
-	)
-	if e < 52 {
-		i &^= 1<<(52-e) - 1
-	}
-	r := *(*float64)(unsafe.Pointer(&i))
-	return r, (f - r) > 0
-}
-
 // Validate fulfills the Rule interface.
-func (m Max) Validate(i interface{}) error {
+func (m Max) Validate(i any) error {
 	x, ok := i.(float64)
 	if !ok {
 		return errNotNumber
@@ -74,7 +62,7 @@ func (m Max) Validate(i interface{}) error {
 }
 
 // Validate fulfills the Rule interface.
-func (m Min) Validate(i interface{}) error {
+func (m Min) Validate(i any) error {
 	x, ok := i.(float64)
 	if !ok {
 		return errNotNumber
@@ -84,7 +72,18 @@ func (m Min) Validate(i interface{}) error {
 	}
 	return nil
 }
-func (n number) Validate(i interface{}) error {
+func modf(f float64) (float64, bool) {
+	var (
+		i = *(*uint64)(unsafe.Pointer(&f))
+		e = uint64(i>>52)&0x7FF - 1023
+	)
+	if e < 52 {
+		i &^= 1<<(52-e) - 1
+	}
+	r := *(*float64)(unsafe.Pointer(&i))
+	return r, (f - r) > 0
+}
+func (n number) Validate(i any) error {
 	x, ok := i.(float64)
 	if !ok {
 		return errNotNumber
@@ -98,7 +97,7 @@ func (n number) Validate(i interface{}) error {
 	}
 	return nil
 }
-func (p polarity) Validate(i interface{}) error {
+func (p polarity) Validate(i any) error {
 	x, ok := i.(float64)
 	if !ok {
 		return errNotNumber

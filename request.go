@@ -74,6 +74,19 @@ func (r *Request) IsOptions() bool {
 	return r.Method == http.MethodOptions
 }
 
+// Marshal will attempt to unmarshal the JSON body in the Request into the supplied
+// interface.
+//
+// This function returns 'ErrNoBody' if the Body is nil or empty.
+//
+// Any JSON parsing errors will also be returned if they occur.
+func (r *Request) Marshal(i any) error {
+	if r.Body == nil {
+		return ErrNoBody
+	}
+	return json.NewDecoder(r.Body).Decode(&i)
+}
+
 // Context returns the request's context. The returned context is always non-nil.
 //
 // This is a child of the base Handler context if supplied on Mux creation
@@ -100,47 +113,13 @@ func (r *Request) Content() (Content, error) {
 	return c, err
 }
 
-// Marshal will attempt to unmarshal the JSON body in the Request into the supplied
-// interface.
-//
-// This function returns 'ErrNoBody' if the Body is nil or empty.
-//
-// Any JSON parsing errors will also be returned if they occur.
-func (r *Request) Marshal(i interface{}) error {
-	if r.Body == nil {
-		return ErrNoBody
-	}
-	return json.NewDecoder(r.Body).Decode(&i)
-}
-
-// ValidateContent returns a content map based on the JSON body data passed in this
-// request.
-//
-// This function allows for passing a Validator that can also validate the content
-// before returning.
-//
-// This will only validate if no JSON parsing errors are returned beforehand.
-//
-// This function will return 'ErrNoBody' if no content was found or the request
-// body is empty.
-func (r *Request) ValidateContent(v Validator) (Content, error) {
-	c, err := r.Content()
-	if err != nil {
-		return c, err
-	}
-	if v == nil {
-		return c, nil
-	}
-	return c, v.Validate(c)
-}
-
 // ValidateMarshal is similar to the Marshal function but will validate the Request
 // content with the specified Validator before returning.
 //
 // This function returns 'ErrNoBody' if the Body is nil or empty.
 //
 // Any JSON parsing errors will also be returned if they occur.
-func (r *Request) ValidateMarshal(v Validator, i interface{}) error {
+func (r *Request) ValidateMarshal(v Validator, i any) error {
 	if r.Body == nil {
 		return ErrNoBody
 	}
@@ -163,4 +142,25 @@ func (r *Request) ValidateMarshal(v Validator, i interface{}) error {
 		}
 	}
 	return json.Unmarshal(b, &i)
+}
+
+// ValidateContent returns a content map based on the JSON body data passed in this
+// request.
+//
+// This function allows for passing a Validator that can also validate the content
+// before returning.
+//
+// This will only validate if no JSON parsing errors are returned beforehand.
+//
+// This function will return 'ErrNoBody' if no content was found or the request
+// body is empty.
+func (r *Request) ValidateContent(v Validator) (Content, error) {
+	c, err := r.Content()
+	if err != nil {
+		return c, err
+	}
+	if v == nil {
+		return c, nil
+	}
+	return c, v.Validate(c)
 }

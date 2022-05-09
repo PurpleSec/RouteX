@@ -82,7 +82,7 @@ func Regex(s string) (Rule, error) {
 }
 
 // Validate fulfills the Rule interface.
-func (l Length) Validate(i interface{}) error {
+func (l Length) Validate(i any) error {
 	var (
 		v, ok = i.(string)
 		x     uint64
@@ -108,7 +108,7 @@ func (l Length) Validate(i interface{}) error {
 	}
 	return nil
 }
-func (r *regex) Validate(i interface{}) error {
+func (r *regex) Validate(i any) error {
 	v, ok := i.(string)
 	if !ok {
 		return errNotString
@@ -118,7 +118,7 @@ func (r *regex) Validate(i interface{}) error {
 	}
 	return errors.New("string does not match expression '" + r.String() + "'")
 }
-func (s strPrefix) Validate(i interface{}) error {
+func (s strPrefix) Validate(i any) error {
 	v, ok := i.(string)
 	if !ok {
 		return errNotString
@@ -128,7 +128,7 @@ func (s strPrefix) Validate(i interface{}) error {
 	}
 	return errors.New("string does not have prefix '" + string(s) + "'")
 }
-func (s strSuffix) Validate(i interface{}) error {
+func (s strSuffix) Validate(i any) error {
 	v, ok := i.(string)
 	if !ok {
 		return errNotString
@@ -138,7 +138,7 @@ func (s strSuffix) Validate(i interface{}) error {
 	}
 	return errors.New("string does not have suffix '" + string(s) + "'")
 }
-func (s strContains) Validate(i interface{}) error {
+func (s strContains) Validate(i any) error {
 	v, ok := i.(string)
 	if !ok {
 		return errNotString

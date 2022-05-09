@@ -48,23 +48,17 @@ type Validator struct {
 var ErrInvalidName = errors.New("invalid name in set")
 
 // Validate fulfills the Rule interface.
-func (s SubSet) Validate(i interface{}) error {
-	m, ok := i.(map[string]interface{})
+func (s SubSet) Validate(i any) error {
+	m, ok := i.(map[string]any)
 	if !ok {
 		return errors.New("type '" + reflect.TypeOf(i).String() + "' is not valid for SubSets")
 	}
 	return validate(s, m)
 }
 
-// Validate will check the rules of this Set against the supplied content object.
-// This function will return nil if the Content is considered valid.
-func (s Set) Validate(c routex.Content) error {
-	return validate(s, c)
-}
-
 // Validate will attempt to validate a single validation rule and return an error
 // if the supplied interface does not match the Validator's constraints.
-func (v Validator) Validate(i interface{}) error {
+func (v Validator) Validate(i any) error {
 	if i == nil && v.Type > None {
 		return errors.New("'" + v.Name + "': expected '" + v.Type.String() + "' but got 'null'")
 	}
@@ -100,7 +94,7 @@ func (v Validator) Validate(i interface{}) error {
 				return errors.New("'" + v.Name + "': expected '[]object' but got '" + reflect.TypeOf(i).String() + "'")
 			}
 			if v.Type > List {
-				w, ok := i.([]interface{})
+				w, ok := i.([]any)
 				if !ok {
 					return errors.New("'" + v.Name + "': '[]object' value could not be parsed")
 				}
@@ -125,6 +119,12 @@ func (v Validator) Validate(i interface{}) error {
 		}
 	}
 	return nil
+}
+
+// Validate will check the rules of this Set against the supplied content object.
+// This function will return nil if the Content is considered valid.
+func (s Set) Validate(c routex.Content) error {
+	return validate(s, c)
 }
 
 // ValidateEmpty will check the rules of this Set against the supplied content

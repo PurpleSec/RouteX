@@ -16,7 +16,7 @@
 package routex
 
 // Content is an alias of a JSON data payload sent to the server.
-type Content map[string]interface{}
+type Content map[string]any
 
 const (
 	// ErrNoBody is an error returned when there is no content passed to a HTTP
@@ -34,7 +34,7 @@ const (
 //
 // This function returns nil if the name does not exist. This is similar to
 // directly calling the name in a map.
-func (c Content) Raw(s string) interface{} {
+func (c Content) Raw(s string) any {
 	return c[s]
 }
 
@@ -145,7 +145,7 @@ func (c Content) Object(s string) (Content, error) {
 	if !ok {
 		return nil, &errValue{s: s, e: ErrNotExists}
 	}
-	r, ok := v.(map[string]interface{})
+	r, ok := v.(map[string]any)
 	if !ok {
 		return nil, &errValue{s: s, e: ErrInvalidType}
 	}
@@ -222,7 +222,7 @@ func (c Content) ObjectDefault(s string, d Content) Content {
 	if !ok {
 		return d
 	}
-	r, ok := v.(map[string]interface{})
+	r, ok := v.(map[string]any)
 	if !ok {
 		return d
 	}

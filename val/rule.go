@@ -25,7 +25,7 @@ type Rules []Rule
 // The 'Validate' function will be passed the object in question and should return
 // nil if it passes.
 type Rule interface {
-	Validate(interface{}) error
+	Validate(any) error
 }
 
 // ID is a ruleset that allows for identifying a ID value.

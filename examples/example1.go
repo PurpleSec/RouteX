@@ -68,9 +68,19 @@ func main() {
 	m.Must("^/(?P<name>[a-z]+)/do$", routex.Func(func1))
 	m.Must("^/derp/(?P<id>[0-9]+)$", routex.Func(func2), http.MethodPost).Middleware(verify)
 
+	m.Must(`^/val`, routex.Marshal[structY](nil, routex.MarshalFunc[structY](funcY)))
+
 	if err := s.ListenAndServe(); err != nil {
 		panic(err)
 	}
+}
+
+type structY struct {
+	A string `json:"a"`
+}
+
+func funcY(_ context.Context, w http.ResponseWriter, r *routex.Request, v structY) {
+	println("val1", v.A)
 }
 
 func func1(_ context.Context, w http.ResponseWriter, r *routex.Request) {

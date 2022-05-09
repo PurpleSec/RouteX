@@ -19,17 +19,16 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"reflect"
 )
 
 type wrapper struct {
 	h Wrapper
 	v Validator
 }
-type marshaler struct {
-	h Marshaler
+type marshaler[T any] struct {
+	h Marshaler[T]
 	v Validator
-	o reflect.Type
+	t T
 }
 
 // Wrapper is an interface that can wrap a Handler to instead directly get a Content
@@ -42,8 +41,8 @@ type Wrapper interface {
 // Marshaler is an interface that can wrap a Handler to instead directly get the
 // associated struct type from the Router instead. These can be created using the
 // 'Marshal*' functions passed with a Validator.
-type Marshaler interface {
-	Handle(context.Context, http.ResponseWriter, *Request, interface{})
+type Marshaler[T any] interface {
+	Handle(context.Context, http.ResponseWriter, *Request, T)
 }
 
 // Wrap will create a handler with the specified Validator that will check the
@@ -58,7 +57,7 @@ func Wrap(v Validator, h Wrapper) Handler {
 // DO NOT expect the writer to be usage afterwards.
 //
 // This function automatically sets the encoding to JSON.
-func JSON(w http.ResponseWriter, c int, i interface{}) {
+func JSON(w http.ResponseWriter, c int, i any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(c)
 	json.NewEncoder(w).Encode(i)
@@ -68,8 +67,8 @@ func JSON(w http.ResponseWriter, c int, i interface{}) {
 // interface object once successfully validated by the supplied validator.
 //
 // An empty or 'new(obj)' variant of the requested data will work for this function.
-func Marshal(v Validator, i interface{}, h Marshaler) Handler {
-	return &marshaler{h: h, v: v, o: reflect.TypeOf(i)}
+func Marshal[T any](v Validator, h Marshaler[T]) Handler {
+	return &marshaler[T]{h: h, v: v}
 }
 func (h wrapper) Handle(x context.Context, w http.ResponseWriter, r *Request) {
 	if r.Body == nil {
@@ -83,18 +82,13 @@ func (h wrapper) Handle(x context.Context, w http.ResponseWriter, r *Request) {
 	}
 	h.h.Handle(x, w, r, c)
 }
-func (m marshaler) Handle(x context.Context, w http.ResponseWriter, r *Request) {
-	o := reflect.New(m.o)
-	if !o.IsValid() {
-		r.Mux.handleError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), w, r)
-		return
-	}
+func (m marshaler[T]) Handle(x context.Context, w http.ResponseWriter, r *Request) {
+	var v T
 	if r.Body == nil {
-		m.h.Handle(x, w, r, nil)
+		m.h.Handle(x, w, r, v)
 		return
 	}
-	v := o.Interface()
-	if err := r.ValidateMarshal(m.v, v); err != nil {
+	if err := r.ValidateMarshal(m.v, &v); err != nil {
 		r.Mux.handleError(http.StatusBadRequest, err.Error(), w, r)
 		return
 	}
