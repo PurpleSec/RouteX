@@ -28,5 +28,5 @@ type Rule interface {
 	Validate(any) error
 }
 
-// ID is a ruleset that allows for identifying a ID value.
+// ID is a ruleset that allows for identifying an ID value.
 var ID = Rules{Integer, GreaterThanZero}

@@ -19,13 +19,13 @@ package routex
 type Content map[string]any
 
 const (
-	// ErrNoBody is an error returned when there is no content passed to a HTTP
+	// ErrNoBody is an error returned when there is no content passed to an HTTP
 	// request when it's required.
 	ErrNoBody = errStr("missing HTTP body")
 	// ErrNotExists is an error returned from any of the Content getter functions
 	// when the value by the supplied name does not exist in the Content map.
 	ErrNotExists = errStr("value does not exist")
-	// ErrInvalidType is a error returned from any of the Content getter functions
+	// ErrInvalidType is an error returned from any of the Content getter functions
 	// when the value by the supplied name is not the requested value.
 	ErrInvalidType = errStr("incorrect value type")
 )
@@ -38,7 +38,7 @@ func (c Content) Raw(s string) any {
 	return c[s]
 }
 
-// Bool attempts to return the value with the provided name as an boolean value.
+// Bool attempts to return the value with the provided name as a boolean value.
 //
 // This function will return an 'ErrNotExists' error if the value by the specified
 // name does not exist or 'ErrInvalidType' if the value does not represent a boolean
@@ -99,7 +99,7 @@ func (c Content) String(s string) (string, error) {
 	return r, nil
 }
 
-// Float attempts to return the value with the provided name as an floating point
+// Float attempts to return the value with the provided name as a floating point
 // value.
 //
 // This function will return an 'ErrNotExists' error if the value by the specified
@@ -117,7 +117,7 @@ func (c Content) Float(s string) (float64, error) {
 	return r, nil
 }
 
-// StringDefault attempts to return the value with the provided name as an string
+// StringDefault attempts to return the value with the provided name as a string
 // value.
 //
 // This function will return the default value specified if the value does not exist
@@ -152,7 +152,7 @@ func (c Content) Object(s string) (Content, error) {
 	return r, nil
 }
 
-// BoolDefault attempts to return the value with the provided name as an boolean
+// BoolDefault attempts to return the value with the provided name as a boolean
 // value.
 //
 // This function will return the default value specified if the value does not exist
@@ -173,7 +173,7 @@ func (c Content) BoolDefault(s string, d bool) bool {
 // value.
 //
 // This function will return the default value specified if the value does not exist
-// or is not a integer type.
+// or is not an integer type.
 func (c Content) IntDefault(s string, d int64) int64 {
 	r, err := c.Float(s)
 	if err != nil {
@@ -186,7 +186,7 @@ func (c Content) IntDefault(s string, d int64) int64 {
 // integer value.
 //
 // This function will return the default value specified if the value does not exist
-// or is not a unsigned integer type.
+// or is not an unsigned integer type.
 func (c Content) UintDefault(s string, d uint64) uint64 {
 	r, err := c.Float(s)
 	if err != nil {
@@ -195,10 +195,10 @@ func (c Content) UintDefault(s string, d uint64) uint64 {
 	return uint64(r)
 }
 
-// FloatDefault attempts to return the value with the provided name as an floating
+// FloatDefault attempts to return the value with the provided name as a floating
 // point value.
 //
-// This function willreturn the default value specified if the value does not exist
+// This function will return the default value specified if the value does not exist
 // or is not a float type.
 func (c Content) FloatDefault(s string, d float64) float64 {
 	v, ok := c[s]
@@ -216,7 +216,7 @@ func (c Content) FloatDefault(s string, d float64) float64 {
 // value (wrapped as a Content alias).
 //
 // This function will return the default value specified if the value does not exist
-// or is not a object type.
+// or is not an object type.
 func (c Content) ObjectDefault(s string, d Content) Content {
 	v, ok := c[s]
 	if !ok {

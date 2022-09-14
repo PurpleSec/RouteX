@@ -74,7 +74,7 @@ type Handler interface {
 	Handle(context.Context, http.ResponseWriter, *Request)
 }
 
-// ErrorHandler is an interface that allows for handeling any error returns to be
+// ErrorHandler is an interface that allows for handling any error returns to be
 // reported to the client instead of using the default methods.
 //
 // The 'HandleError' method will be called with an error status code, error message

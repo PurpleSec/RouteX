@@ -10,7 +10,7 @@ import (
 //
 // Middlewares applied to Routes will be applied AFTER the global Mux Middleware.
 //
-// The returned boolean can be used to interrupt the call stack before handeling
+// The returned boolean can be used to interrupt the call stack before handling
 // back control to implement features such as redirects or authentication.
 type Middleware func(context.Context, http.ResponseWriter, *Request) bool
 

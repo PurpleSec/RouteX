@@ -20,7 +20,7 @@ import "strconv"
 type value string
 type values map[string]value
 
-// ErrEmptyValue is a error returned from number conversion functions when the
+// ErrEmptyValue is an error returned from number conversion functions when the
 // string value is empty and does not represent a number.
 const ErrEmptyValue = errStr("value is empty")
 

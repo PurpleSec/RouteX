@@ -43,7 +43,7 @@ type WrapFunc func(context.Context, http.ResponseWriter, *Request, Content)
 // instead.
 type MarshalFunc[T any] func(context.Context, http.ResponseWriter, *Request, T)
 
-// Convert is a warpper for the standard 'http.Handler' that can be used for
+// Convert is a wrapper for the standard 'http.Handler' that can be used for
 // compatibility with any built-in interface to support RouteX functions.
 func Convert(h http.Handler) Handler {
 	return convert{Handler: h}

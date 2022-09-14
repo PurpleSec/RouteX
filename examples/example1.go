@@ -46,7 +46,7 @@ func alwaysJSON(_ context.Context, w http.ResponseWriter, _ *routex.Request) boo
 	return true
 }
 
-func verify(_ context.Context, w http.ResponseWriter, r *routex.Request) bool {
+func verify(_ context.Context, _ http.ResponseWriter, r *routex.Request) bool {
 	if r.Values.IntDefault("id", 0) < 10 {
 		w.WriteHeader(http.StatusForbidden)
 		return false
@@ -79,7 +79,7 @@ type structY struct {
 	A string `json:"a"`
 }
 
-func funcY(_ context.Context, w http.ResponseWriter, r *routex.Request, v structY) {
+func funcY(_ context.Context, _ http.ResponseWriter, _ *routex.Request, v structY) {
 	println("val1", v.A)
 }
 

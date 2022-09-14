@@ -90,7 +90,7 @@ func (r *Request) Marshal(i any) error {
 // Context returns the request's context. The returned context is always non-nil.
 //
 // This is a child of the base Handler context if supplied on Mux creation
-// and can be cancled if the Handler is closed or any timeout is passed.
+// and can be canceled if the Handler is closed or any timeout is passed.
 func (r *Request) Context() context.Context {
 	return r.ctx
 }

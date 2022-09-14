@@ -21,9 +21,9 @@ const (
 	Any kind = iota
 	// None is the opposite of the Any type. This will instruct the validator to
 	// ensure the value is null
-	// or non-existant.
+	// or non-existent.
 	None
-	// Number represents a type of an integer or float value. These are stored as
+	// Number represents a type of integer or float value. These are stored as
 	// float64 values.
 	Number
 	// Int represents a type of integer value. Similar to having the Rule 'Integer'.
