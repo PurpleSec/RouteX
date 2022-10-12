@@ -15,6 +15,8 @@
 
 package routex
 
+import "encoding/base64"
+
 // Content is an alias of a JSON data payload sent to the server.
 type Content map[string]any
 
@@ -80,6 +82,27 @@ func (c Content) Uint(s string) (uint64, error) {
 		return 0, err
 	}
 	return uint64(r), nil
+}
+
+// Bytes attempts to return the value with the provided name as a byte slice value
+// that is represented by a Base64-encoded string.
+//
+// This function will return an 'ErrNotExists' error if the value by the specified
+// name does not exist or 'ErrInvalidType' if the value does not represent a string
+// type.
+//
+// This will attempt to decode the Base64 string and will return the encoding
+// errors if they occur.
+func (c Content) Bytes(s string) ([]byte, error) {
+	v, ok := c[s]
+	if !ok {
+		return nil, &errValue{s: s, e: ErrNotExists}
+	}
+	r, ok := v.(string)
+	if !ok {
+		return nil, &errValue{s: s, e: ErrInvalidType}
+	}
+	return base64.StdEncoding.DecodeString(r)
 }
 
 // String attempts to return the value with the provided name as a string value.
