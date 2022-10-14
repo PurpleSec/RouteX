@@ -88,7 +88,7 @@ func (c Content) Uint(s string) (uint64, error) {
 // that is represented by a Base64-encoded string.
 //
 // This function will return an 'ErrNotExists' error if the value by the specified
-// name does not exist or 'ErrInvalidType' if the value does not represent a string
+// name does not exist or 'ErrInvalidType' if the value does not represent a bytes
 // type.
 //
 // This will attempt to decode the Base64 string and will return the encoding
@@ -216,6 +216,29 @@ func (c Content) UintDefault(s string, d uint64) uint64 {
 		return d
 	}
 	return uint64(r)
+}
+
+// BytesDefault to return the value with the provided name as a byte slice value
+// that is represented by a Base64-encoded string.
+//
+// This function will return the default value specified if the value does not exist
+// or is not a bytes type.
+//
+// This will attempt to decode the Base64 string and will return the default value
+// if errors occur.
+func (c Content) BytesDefault(s string, d []byte) []byte {
+	v, ok := c[s]
+	if !ok {
+		return d
+	}
+	r, ok := v.(string)
+	if !ok {
+		return d
+	}
+	if b, err := base64.StdEncoding.DecodeString(r); err == nil {
+		return b
+	}
+	return d
 }
 
 // FloatDefault attempts to return the value with the provided name as a floating
