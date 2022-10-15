@@ -205,6 +205,32 @@ func (c Content) IntDefault(s string, d int64) int64 {
 	return int64(r)
 }
 
+// BytesEmpty attempts to return the value with the provided name as a byte slice
+// value that is represented by a Base64-encoded string.
+//
+// This function will return an 'ErrInvalidType' if the value does not represent
+// a bytes type. Empty or missing values will simply return none.
+//
+// This function is different than the other 'Bytes' function as it allows for
+// empty/missing byte slices but not invalid or improperly formatted ones.
+//
+// This will attempt to decode the Base64 string and will return the encoding
+// errors if they occur.
+func (c Content) BytesEmpty(s string) ([]byte, error) {
+	v, ok := c[s]
+	if !ok {
+		return nil, nil
+	}
+	r, ok := v.(string)
+	if !ok {
+		return nil, &errValue{s: s, e: ErrInvalidType}
+	}
+	if len(r) == 0 {
+		return nil, nil
+	}
+	return base64.StdEncoding.DecodeString(r)
+}
+
 // UintDefault attempts to return the value with the provided name as an unsigned
 // integer value.
 //
