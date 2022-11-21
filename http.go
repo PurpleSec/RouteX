@@ -138,7 +138,7 @@ func (m *Mux) handleError(c int, s string, w http.ResponseWriter, r *Request) {
 func (m *Mux) handler(s string, r *http.Request) (*handler, *Request, string, bool) {
 	var h *handler
 	if m.lock.RLock(); m.log != nil {
-		m.log.Println(`[RouteX] URL "` + s + `" requested...`)
+		m.log.Println(`[RouteX] URL "` + s + `" requested..`)
 	}
 	for i := range m.routes {
 		l := m.routes[i].matcher.FindStringSubmatch(s)
